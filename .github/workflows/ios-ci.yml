@@ -16,18 +16,13 @@ concurrency:
 
 jobs:
   build-test:
-    name: Build and test
-    runs-on: macos-15
-    timeout-minutes: 25
+    name: Xcode 27 build and test
+    runs-on: xcode-27
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Select latest stable Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -37,6 +32,11 @@ jobs:
           xcodebuild -version
           swift --version
           xcodegen --version
+
+      - name: Require Xcode 27
+        run: |
+          version="$(xcodebuild -version | head -1)"
+          [[ "$version" == Xcode\ 27* ]] || { echo "Expected Xcode 27, got: $version"; exit 1; }
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -66,7 +66,7 @@ jobs:
           raise SystemExit("No available iPhone simulator found")
           PY
 
-      - name: Build app
+      - name: Build app and Live Activity extension
         run: |
           set -o pipefail
           xcodebuild \
@@ -94,6 +94,6 @@ jobs:
       - name: Upload simulator app
         uses: actions/upload-artifact@v4
         with:
-          name: COLLAPSE-iOS-Simulator
+          name: COLLAPSE-iOS-Simulator-Xcode27
           path: .build/Build/Products/Debug-iphonesimulator/Collapse.app
           if-no-files-found: error

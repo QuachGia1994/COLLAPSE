@@ -1,15 +1,24 @@
 import Foundation
 import Observation
 
+enum GameState: Equatable, Sendable {
+    case ready
+    case playing
+    case paused
+    case gameOver
+}
+
 @MainActor
 @Observable
-final class GameSession {
+final class GameEngine {
     private let generator: RoundGenerator
-    private let haptics: HapticsClient
+    private var sensory: SensoryClient
     private var roundIndex = 0
     private var choiceStartedAt = 0.0
     private var travelStartedAt = 0.0
+    private var pausedAt: Double?
 
+    private(set) var state: GameState = .ready
     private(set) var phase: GamePhase = .ready
     private(set) var round: RoundLayout
     private(set) var score = 0
@@ -18,9 +27,9 @@ final class GameSession {
     private(set) var collapseProgress = 0.0
     var selectedBranch: TimelineBranch = .cyan
 
-    init(seed: UInt64 = 0xC011A953, haptics: HapticsClient = .live) {
+    init(seed: UInt64 = 0xC011A953, sensory: SensoryClient = .silent) {
         generator = RoundGenerator(baseSeed: seed)
-        self.haptics = haptics
+        self.sensory = sensory
         round = generator.makeRound(index: 0)
     }
 
@@ -33,8 +42,25 @@ final class GameSession {
     }
 
     var choiceProgress: Double {
-        guard phase == .choosing else { return 0 }
+        guard state == .playing, phase == .choosing else { return 0 }
         return min(max((Self.now() - choiceStartedAt) / choiceDuration, 0), 1)
+    }
+
+    var guidanceQuality: Double {
+        let progress = round.hazard.pathProgress
+        let candidate = round.path(for: selectedBranch).point(at: progress)
+        let hazard = round.hazard.center
+        let distance = hypot(candidate.x - hazard.x, candidate.y - hazard.y)
+        let clearance = max(0, distance - round.hazard.radius)
+        return min(clearance / (round.hazard.radius * 4), 1)
+    }
+
+    func connectSensory(_ sensory: SensoryClient) {
+        self.sensory.stopGuidance()
+        self.sensory = sensory
+        if state == .playing, phase == .choosing {
+            sensory.beginGuidance(guidanceQuality)
+        }
     }
 
     func start(at requestedTime: Double? = nil) {
@@ -47,16 +73,20 @@ final class GameSession {
         rejectedBranch = nil
         collapseProgress = 0
         phase = .choosing
+        state = .playing
+        pausedAt = nil
         choiceStartedAt = time
+        sensory.beginGuidance(guidanceQuality)
     }
 
     func toggleSelection() {
-        guard phase == .choosing else { return }
+        guard state == .playing, phase == .choosing else { return }
         selectedBranch = selectedBranch.other
-        haptics.selection()
+        sensory.updateGuidance(guidanceQuality)
     }
 
     func tick(at requestedTime: Double? = nil) {
+        guard state == .playing else { return }
         let time = requestedTime ?? Self.now()
         switch phase {
         case .ready, .dead:
@@ -70,7 +100,29 @@ final class GameSession {
         }
     }
 
+    func pause(at requestedTime: Double? = nil) {
+        guard state == .playing else { return }
+        pausedAt = requestedTime ?? Self.now()
+        state = .paused
+        sensory.stopGuidance()
+    }
+
+    func resume(at requestedTime: Double? = nil) {
+        guard state == .paused, let pausedAt else { return }
+        let time = requestedTime ?? Self.now()
+        let pausedDuration = max(0, time - pausedAt)
+        if phase == .choosing {
+            choiceStartedAt += pausedDuration
+            sensory.beginGuidance(guidanceQuality)
+        } else if phase == .traveling {
+            travelStartedAt += pausedDuration
+        }
+        self.pausedAt = nil
+        state = .playing
+    }
+
     func restart(at requestedTime: Double? = nil) {
+        sensory.stopGuidance()
         start(at: requestedTime)
     }
 
@@ -80,7 +132,8 @@ final class GameSession {
         travelProgress = 0
         collapseProgress = 0
         phase = .traveling
-        haptics.commit()
+        sensory.stopGuidance()
+        sensory.commit()
     }
 
     private func updateTravel(at time: Double) {
@@ -90,13 +143,14 @@ final class GameSession {
 
         if selectedBranch == round.dangerBranch, travelProgress >= round.hazard.pathProgress - 0.035 {
             phase = .dead
-            haptics.failure()
+            state = .gameOver
+            sensory.failure()
             return
         }
 
         if travelProgress >= 1 {
             score += 1
-            haptics.success()
+            sensory.success()
             prepareNextRound(at: time)
         }
     }
@@ -110,6 +164,7 @@ final class GameSession {
         collapseProgress = 0
         phase = .choosing
         choiceStartedAt = time + 0.12
+        sensory.beginGuidance(guidanceQuality)
     }
 
     private static func now() -> Double {

@@ -1,4 +1,3 @@
-import Foundation
 import Observation
 import StoreKit
 
@@ -7,11 +6,9 @@ import StoreKit
 final class EntitlementStore {
     static let plusProductID = "collapse.plus.lifetime"
 
-    private(set) var plusProduct: Product?
     private(set) var isPlusUnlocked = false
-    private(set) var isLoading = false
     private(set) var errorMessage: String?
-    private var transactionTask: Task<Void, Never>?
+    @ObservationIgnored private var transactionTask: Task<Void, Never>?
 
     init() {
         transactionTask = Task { [weak self] in
@@ -25,48 +22,9 @@ final class EntitlementStore {
         Task { await refresh() }
     }
 
-    var displayPrice: String {
-        plusProduct?.displayPrice ?? "—"
-    }
-
     func refresh() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            plusProduct = try await Product.products(for: [Self.plusProductID]).first
-            await refreshEntitlements()
-            errorMessage = plusProduct == nil && !isPlusUnlocked ? "Plus chưa được cấu hình trên App Store." : nil
-        } catch {
-            errorMessage = "Plus hiện không khả dụng."
-        }
-    }
-
-    func purchasePlus() async {
-        guard let plusProduct else {
-            errorMessage = "Plus chưa được cấu hình trên App Store."
-            return
-        }
-
-        do {
-            let result = try await plusProduct.purchase()
-            switch result {
-            case .success(let verification):
-                guard case .verified(let transaction) = verification else {
-                    errorMessage = "Không thể xác minh giao dịch."
-                    return
-                }
-                await transaction.finish()
-                await refreshEntitlements()
-            case .pending:
-                errorMessage = "Giao dịch đang chờ phê duyệt."
-            case .userCancelled:
-                errorMessage = nil
-            @unknown default:
-                errorMessage = "App Store trả về trạng thái chưa xác định."
-            }
-        } catch {
-            errorMessage = "Không thể hoàn tất giao dịch."
-        }
+        await refreshEntitlements()
+        errorMessage = nil
     }
 
     func restorePurchases() async {

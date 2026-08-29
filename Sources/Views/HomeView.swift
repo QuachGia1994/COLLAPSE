@@ -52,6 +52,7 @@ struct HomeView: View {
 
                     HStack(spacing: 24) {
                         metric(title: "KỶ LỤC", value: "\(profile.bestScore)")
+                        metric(title: "DAILY", value: "🔥\(profile.dailyRunStreak)")
                         metric(title: "SKIN", value: profile.selectedSkin.title.uppercased())
                     }
 

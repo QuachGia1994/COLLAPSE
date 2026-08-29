@@ -5,19 +5,26 @@ import SwiftUI
 struct CollapseApp: App {
     @State private var profile = PlayerProfile()
     @State private var entitlement = EntitlementStore()
+    @State private var sensory = SensoryEngine()
+    @State private var runActivity = RunActivityController()
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if profile.didCompleteTutorial {
-                    HomeView()
-                } else {
-                    TutorialView()
-                }
-            }
-            .preferredColorScheme(.dark)
-            .environment(profile)
-            .environment(entitlement)
+            rootContent
+                .preferredColorScheme(.dark)
+                .environment(profile)
+                .environment(entitlement)
+                .environment(sensory)
+                .environment(runActivity)
+        }
+    }
+
+    @ContentBuilder
+    private var rootContent: some View {
+        if profile.didCompleteTutorial {
+            HomeView()
+        } else {
+            TutorialView()
         }
     }
 }

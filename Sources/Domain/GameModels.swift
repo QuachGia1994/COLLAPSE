@@ -1,7 +1,6 @@
 import Foundation
-import CoreGraphics
 
-enum TimelineBranch: Int, CaseIterable, Sendable {
+enum TimelineBranch: Int, CaseIterable, Hashable, Sendable {
     case cyan
     case violet
 
@@ -18,10 +17,6 @@ enum GamePhase: Equatable, Sendable {
 struct GamePoint: Equatable, Sendable {
     let x: Double
     let y: Double
-
-    func cgPoint(in size: CGSize) -> CGPoint {
-        CGPoint(x: size.width * x, y: size.height * y)
-    }
 }
 
 struct FuturePath: Equatable, Sendable {

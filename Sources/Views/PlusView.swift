@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 
 @MainActor
@@ -44,39 +45,7 @@ struct PlusView: View {
                     .padding(18)
                     .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
 
-                    if entitlement.isPlusUnlocked {
-                        Label("PLUS ĐÃ MỞ", systemImage: "checkmark.seal.fill")
-                            .font(.headline)
-                            .foregroundStyle(.green)
-                    } else {
-                        Button {
-                            Task { await entitlement.purchasePlus() }
-                        } label: {
-                            HStack {
-                                Text("MỞ PLUS")
-                                Spacer()
-                                Text(entitlement.displayPrice)
-                            }
-                            .font(.headline)
-                            .padding(.horizontal, 4)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.yellow)
-                        .controlSize(.large)
-                        .disabled(entitlement.plusProduct == nil || entitlement.isLoading)
-
-                        Button("Khôi phục giao dịch") {
-                            Task { await entitlement.restorePurchases() }
-                        }
-                        .font(.footnote)
-
-                        if let errorMessage = entitlement.errorMessage {
-                            Text(errorMessage)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                    }
+                    purchaseSection
 
                     Text("Plus chỉ thay đổi trình bày và tính năng lưu/nhìn lại. Hazard, thời gian, điểm và độ sống sót giống hệt bản Free.")
                         .font(.caption)
@@ -95,6 +64,35 @@ struct PlusView: View {
         .task { await entitlement.refresh() }
     }
 
+    @ContentBuilder
+    private var purchaseSection: some View {
+        if entitlement.isPlusUnlocked {
+            Label("PLUS ĐÃ MỞ", systemImage: "checkmark.seal.fill")
+                .font(.headline)
+                .foregroundStyle(.green)
+        } else {
+            ProductView(id: EntitlementStore.plusProductID, prefersPromotionalIcon: false) {
+                Image(systemName: "diamond.fill")
+                    .font(.title2)
+                    .foregroundStyle(.yellow)
+            }
+            .padding(8)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            Button("Khôi phục giao dịch") {
+                Task { await entitlement.restorePurchases() }
+            }
+            .font(.footnote)
+
+            if let errorMessage = entitlement.errorMessage {
+                Text(errorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
     private var plusOrb: some View {
         ZStack {
             Circle()
@@ -107,7 +105,6 @@ struct PlusView: View {
                     )
                 )
                 .frame(width: 190, height: 190)
-                .blur(radius: 0.2)
             Circle()
                 .stroke(
                     AngularGradient(colors: [.cyan, .blue, .purple, .pink, .cyan], center: .center),
