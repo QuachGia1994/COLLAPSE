@@ -10,4 +10,7 @@
 - Classic plus Nebula, Aurora, Solar, Obsidian, and Frozen Quartz visual skins; Plus skins do not alter gameplay.
 - Local best score, selected skin, and tutorial persistence.
 - Unit tests for deterministic rounds, hazard placement, safe scoring, and dangerous-future death.
-- GitHub Actions macOS CI that generates the Xcode project, builds the iOS Simulator app, and runs unit tests on every push or pull request to `main`.
+- GitHub Actions macOS CI that generates the Xcode project, builds the iOS Simulator app, runs unit tests on every push or pull request to `main`, and uploads the successful simulator app as a downloadable artifact.
+
+### Fixed
+- CI test-host resolution now uses the same `Collapse.app/Collapse` product name expected by the generated unit-test target.

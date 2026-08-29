@@ -27,4 +27,4 @@ open Collapse.xcodeproj
 Target: iOS 18+, Swift 6 language mode, SwiftUI.
 
 ## CI
-GitHub Actions runs on macOS, selects the latest stable Xcode, installs XcodeGen, generates `Collapse.xcodeproj`, builds the app for iOS Simulator, then runs `CollapseTests`. The workflow triggers on pushes and pull requests to `main`, and can also be started manually.
+GitHub Actions runs on macOS, selects the latest stable Xcode, installs XcodeGen, generates `Collapse.xcodeproj`, builds the app for iOS Simulator, then runs `CollapseTests`. A successful run uploads `COLLAPSE-iOS-Simulator` as an Actions artifact. The workflow triggers on pushes and pull requests to `main`, and can also be started manually.

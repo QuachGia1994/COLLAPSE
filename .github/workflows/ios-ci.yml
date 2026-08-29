@@ -73,6 +73,7 @@ jobs:
             -project Collapse.xcodeproj \
             -scheme Collapse \
             -configuration Debug \
+            -derivedDataPath .build \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
@@ -85,6 +86,14 @@ jobs:
             -project Collapse.xcodeproj \
             -scheme Collapse \
             -configuration Debug \
+            -derivedDataPath .build \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             CODE_SIGNING_ALLOWED=NO \
             test
+
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: COLLAPSE-iOS-Simulator
+          path: .build/Build/Products/Debug-iphonesimulator/Collapse.app
+          if-no-files-found: error

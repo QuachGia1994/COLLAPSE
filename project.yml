@@ -19,7 +19,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.collapse.game
-        PRODUCT_NAME: COLLAPSE
+        PRODUCT_NAME: Collapse
         PRODUCT_MODULE_NAME: Collapse
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
