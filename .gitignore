@@ -1,0 +1,10 @@
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# XcodeGen
+Collapse.xcodeproj/
+
+# macOS
+.DS_Store
