@@ -29,3 +29,4 @@
 ### Fixed
 - CI test-host resolution now uses the same `Collapse.app/Collapse` product name expected by the generated unit-test target.
 - Xcode 27 ActivityKit updates no longer send a main-actor-isolated `Activity` reference into `@concurrent` APIs; the controller keeps only the activity ID and resolves each activity inside a nonisolated helper.
+- Android debug builds now enable AndroidX explicitly so Compose dependencies pass AAR metadata validation.
