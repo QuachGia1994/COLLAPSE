@@ -20,6 +20,7 @@
 - Xcode 27 CI preview lane and SwiftUI `ContentBuilder` adoption for the app root and Plus purchase section.
 - Daily Run streak and local top-three score persistence with focused unit coverage.
 - Repeated cold-launch UI smoke test to catch startup crashes in CI before release builds.
+- Native Android Jetpack Compose test client preserving the visible-two-futures, one-tap core loop, plus GitHub Actions debug APK output for device testing.
 
 ### Changed
 - Gameplay rendering now uses only SpriteKit/Core Graphics primitives and procedural audio; the app icon is the only required static visual asset.

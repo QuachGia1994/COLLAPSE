@@ -39,4 +39,8 @@ open Collapse.xcodeproj
 Target: iOS 18+, Swift 6 language mode with complete strict concurrency. Xcode 27 builds use SwiftUI `ContentBuilder`; standard SwiftUI controls/materials are left native so current platform design, including Liquid Glass where the OS applies it, is not reimplemented manually.
 
 ## CI
-GitHub Actions uses the `xcode-27` public-preview runner, installs XcodeGen, generates `Collapse.xcodeproj`, builds the app plus Live Activity extension for iOS Simulator, and runs `CollapseTests`. A successful run uploads `COLLAPSE-iOS-Simulator-Xcode27`. The workflow triggers on pushes and pull requests to `main` and can also be started manually.
+GitHub Actions runs two build pipelines:
+- `iOS CI` uses the `xcode-27` public-preview runner, generates `Collapse.xcodeproj`, builds the app + Live Activity extension, runs unit/UI tests, and uploads `COLLAPSE-iOS-Simulator-Xcode27`.
+- `Android APK` builds the native Jetpack Compose test client and uploads `COLLAPSE-Android-APK` (`app-debug.apk`) for direct Android device testing.
+
+Both workflows trigger on pushes and pull requests to `main` and can also be started manually.
