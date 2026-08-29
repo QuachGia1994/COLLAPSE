@@ -1,7 +1,7 @@
 import ActivityKit
 import Foundation
 
-struct RunActivityAttributes: ActivityAttributes {
+struct RunActivityAttributes: ActivityAttributes, Sendable {
     struct ContentState: Codable, Hashable, Sendable {
         let score: Int
         let bestScore: Int
