@@ -14,6 +14,7 @@ final class PlayerProfile {
         static let topScores = "collapse.local.topScores"
         static let gemBalance = "collapse.economy.gems"
         static let unlockedSkins = "collapse.skin.unlocked"
+        static let mode = "collapse.mode.selected"
     }
 
     private let defaults: UserDefaults
@@ -28,6 +29,10 @@ final class PlayerProfile {
 
     var selectedSkin: GameSkin {
         didSet { defaults.set(selectedSkin.rawValue, forKey: Key.skin) }
+    }
+
+    var selectedMode: GameMode {
+        didSet { defaults.set(selectedMode.rawValue, forKey: Key.mode) }
     }
 
     private(set) var dailyRunStreak: Int {
@@ -59,6 +64,7 @@ final class PlayerProfile {
         didCompleteTutorial = defaults.bool(forKey: Key.tutorial)
         bestScore = defaults.integer(forKey: Key.bestScore)
         selectedSkin = GameSkin(rawValue: defaults.string(forKey: Key.skin) ?? "") ?? .classic
+        selectedMode = GameMode(rawValue: defaults.string(forKey: Key.mode) ?? "") ?? .classic
         dailyRunStreak = defaults.integer(forKey: Key.dailyStreak)
         lastRunDate = defaults.object(forKey: Key.lastRunDate) as? Date
         dailyBestScore = defaults.integer(forKey: Key.dailyBestScore)

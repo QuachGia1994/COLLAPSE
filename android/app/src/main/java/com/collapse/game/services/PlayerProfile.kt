@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.collapse.game.domain.GameMode
 import com.collapse.game.ui.GameSkin
 import com.collapse.game.ui.SkinAccess
 import java.time.LocalDate
@@ -24,12 +25,19 @@ class PlayerProfile(context: Context) {
         private set
     var selectedSkin by mutableStateOf(readSelectedSkin())
         private set
+    var selectedMode by mutableStateOf(readSelectedMode())
+        private set
     var unlockedSkinIds by mutableStateOf(preferences.getStringSet(KEY_UNLOCKED, emptySet())?.toSet() ?: emptySet())
         private set
 
     fun completeTutorial() {
         didCompleteTutorial = true
         preferences.edit().putBoolean(KEY_TUTORIAL, true).apply()
+    }
+
+    fun selectMode(mode: GameMode) {
+        selectedMode = mode
+        preferences.edit().putString(KEY_MODE, mode.name).apply()
     }
 
     fun registerRunStart(today: LocalDate = LocalDate.now()) {
@@ -89,6 +97,11 @@ class PlayerProfile(context: Context) {
         return GameSkin.entries.firstOrNull { it.name == raw } ?: GameSkin.Classic
     }
 
+    private fun readSelectedMode(): GameMode {
+        val raw = preferences.getString(KEY_MODE, null) ?: return GameMode.Classic
+        return GameMode.entries.firstOrNull { it.name == raw } ?: GameMode.Classic
+    }
+
     private companion object {
         const val KEY_TUTORIAL = "tutorial.completed"
         const val KEY_BEST = "best.score"
@@ -98,5 +111,6 @@ class PlayerProfile(context: Context) {
         const val KEY_GEMS = "economy.gems"
         const val KEY_SKIN = "skin.selected"
         const val KEY_UNLOCKED = "skin.unlocked"
+        const val KEY_MODE = "mode.selected"
     }
 }

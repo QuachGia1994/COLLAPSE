@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.time.LocalDate
 
 interface SensoryClient {
     fun branchChanged(quality: Double)
@@ -24,14 +25,21 @@ interface SensoryClient {
 }
 
 class GameController(
-    seed: ULong = 0xC011A953uL,
+    val mode: GameMode = GameMode.Classic,
+    seed: ULong? = null,
+    date: LocalDate = LocalDate.now(),
     private var sensory: SensoryClient = SensoryClient.Silent
 ) {
-    private val generator = RoundGenerator(seed)
+    private val generator = RoundGenerator(
+        baseSeed = seed ?: mode.seed(date),
+        hazardRadiusMultiplier = mode.hazardRadiusMultiplier
+    )
     private var roundIndex = 0
     private var choiceStartedAt = 0L
     private var travelStartedAt = 0L
+    private var countdownStartedAt = 0L
     private var pausedAt: Long? = null
+    private var switchesThisRound = 0
 
     var state by mutableStateOf(GameState.Ready)
         private set
@@ -58,10 +66,10 @@ class GameController(
         private set
 
     val choiceDurationSeconds: Double
-        get() = maxOf(0.72, 1.45 - score * 0.045)
+        get() = maxOf(mode.choiceFloor, mode.choiceBase - score * mode.choiceDecay)
 
     val travelDurationSeconds: Double
-        get() = maxOf(0.62, 0.90 - score * 0.012)
+        get() = maxOf(mode.travelFloor, mode.travelBase - score * mode.travelDecay)
 
     val guidanceQuality: Double
         get() {
@@ -86,10 +94,10 @@ class GameController(
         round = generator.makeRound(0)
         selectedBranch = TimelineBranch.Cyan
         resetRoundState()
-        phase = GamePhase.Choosing
+        phase = GamePhase.Ready
         state = GameState.Playing
         pausedAt = null
-        choiceStartedAt = atNanos
+        countdownStartedAt = atNanos
     }
 
     fun tick(frameNanos: Long) {
@@ -97,15 +105,19 @@ class GameController(
         nowNanos = frameNanos
         expireFeedback(frameNanos)
         when (phase) {
+            GamePhase.Ready -> tickCountdown(frameNanos)
             GamePhase.Choosing -> tickChoice(frameNanos)
             GamePhase.Traveling -> tickTravel(frameNanos)
-            GamePhase.Ready, GamePhase.Dead -> Unit
+            GamePhase.Dead -> Unit
         }
     }
 
     fun toggleSelection() {
         if (state != GameState.Playing || phase != GamePhase.Choosing) return
+        val limit = mode.maxSwitchesPerRound
+        if (limit != null && switchesThisRound >= limit) return
         selectedBranch = selectedBranch.other
+        switchesThisRound += 1
         sensory.branchChanged(guidanceQuality)
     }
 
@@ -120,8 +132,7 @@ class GameController(
         val pauseStart = pausedAt ?: return
         if (state != GameState.Paused) return
         val pausedDuration = maxOf(0L, atNanos - pauseStart)
-        if (phase == GamePhase.Choosing) choiceStartedAt += pausedDuration
-        if (phase == GamePhase.Traveling) travelStartedAt += pausedDuration
+        shiftActiveClock(pausedDuration)
         nowNanos = atNanos
         pausedAt = null
         state = GameState.Playing
@@ -129,6 +140,18 @@ class GameController(
 
     fun restart(atNanos: Long = nowOrFallback()) {
         start(atNanos)
+    }
+
+    fun countdownLabel(): String? {
+        if (state != GameState.Playing || phase != GamePhase.Ready) return null
+        val elapsed = elapsedSeconds(countdownStartedAt, nowNanos)
+        return when {
+            elapsed < 1.0 -> "3"
+            elapsed < 2.0 -> "2"
+            elapsed < 3.0 -> "1"
+            elapsed < COUNTDOWN_SECONDS -> "GO"
+            else -> null
+        }
     }
 
     fun choiceRemaining(): Double {
@@ -141,6 +164,13 @@ class GameController(
         val current = feedback ?: return null
         val elapsed = nowNanos / 1_000_000_000.0 - current.startedAtSeconds
         return (elapsed / 0.38).coerceIn(0.0, 1.0)
+    }
+
+    private fun tickCountdown(frameNanos: Long) {
+        if (elapsedSeconds(countdownStartedAt, frameNanos) < COUNTDOWN_SECONDS) return
+        phase = GamePhase.Choosing
+        choiceStartedAt = frameNanos
+        sensory.branchChanged(guidanceQuality)
     }
 
     private fun tickChoice(frameNanos: Long) {
@@ -160,12 +190,21 @@ class GameController(
         collapseProgress = (elapsed / 0.42).coerceIn(0.0, 1.0)
         collectGemIfNeeded(frameNanos)
         if (didHitHazard()) {
-            endRun(frameNanos)
+            handleCollision(frameNanos)
             return
         }
         if (travelProgress < 1.0) return
         score += 1
         sensory.success()
+        prepareNextRound(frameNanos)
+    }
+
+    private fun handleCollision(frameNanos: Long) {
+        if (mode.collisionEndsRun) {
+            endRun(frameNanos)
+            return
+        }
+        sensory.failure()
         prepareNextRound(frameNanos)
     }
 
@@ -195,6 +234,7 @@ class GameController(
         resetRoundState()
         phase = GamePhase.Choosing
         choiceStartedAt = frameNanos + 120_000_000L
+        sensory.branchChanged(guidanceQuality)
     }
 
     private fun resetRoundState() {
@@ -203,6 +243,16 @@ class GameController(
         rejectedBranch = null
         didCollectCurrentGem = false
         feedback = null
+        switchesThisRound = 0
+    }
+
+    private fun shiftActiveClock(pausedDuration: Long) {
+        when (phase) {
+            GamePhase.Ready -> countdownStartedAt += pausedDuration
+            GamePhase.Choosing -> choiceStartedAt += pausedDuration
+            GamePhase.Traveling -> travelStartedAt += pausedDuration
+            GamePhase.Dead -> Unit
+        }
     }
 
     private fun expireFeedback(frameNanos: Long) {
@@ -216,4 +266,8 @@ class GameController(
     private fun elapsedSeconds(start: Long, end: Long): Double = (end - start) / 1_000_000_000.0
 
     private fun nowOrFallback(): Long = System.nanoTime()
+
+    private companion object {
+        const val COUNTDOWN_SECONDS = 3.35
+    }
 }

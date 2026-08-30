@@ -93,7 +93,11 @@ class SplitMix64(seed: ULong) {
     fun unit(): Double = (next() shr 11).toDouble() / (1uL shl 53).toDouble()
 }
 
-class RoundGenerator(private val baseSeed: ULong = 0xC011A953uL) {
+class RoundGenerator(
+    private val baseSeed: ULong = 0xC011A953uL,
+    private val hazardRadiusMultiplier: Double = 1.0,
+    private val gemValue: Int = 1
+) {
     fun makeRound(index: Int): RoundLayout {
         val random = SplitMix64(baseSeed + index.toULong() * 0x9E3779B97F4A7C15uL)
         val paths = makePaths(random)
@@ -126,7 +130,11 @@ class RoundGenerator(private val baseSeed: ULong = 0xC011A953uL) {
     ): Hazard {
         val progress = 0.58 + random.unit() * 0.14
         val path = if (danger == TimelineBranch.Cyan) paths.first else paths.second
-        return Hazard(path.pointAt(progress), radius = 0.055, pathProgress = progress)
+        return Hazard(
+            center = path.pointAt(progress),
+            radius = 0.055 * hazardRadiusMultiplier,
+            pathProgress = progress
+        )
     }
 
     private fun makeGem(
@@ -136,6 +144,6 @@ class RoundGenerator(private val baseSeed: ULong = 0xC011A953uL) {
     ): Gem {
         val progress = 0.42 + random.unit() * 0.12
         val path = if (safe == TimelineBranch.Cyan) paths.first else paths.second
-        return Gem(path.pointAt(progress), radius = 0.024, pathProgress = progress, value = 1)
+        return Gem(path.pointAt(progress), radius = 0.024, pathProgress = progress, value = gemValue)
     }
 }

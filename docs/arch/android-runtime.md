@@ -10,13 +10,15 @@ Product direction and monetization boundaries: `../biz/product.md`.
 - Platform-only features stay native: ActivityKit/Dynamic Island is iOS-only and is not imitated on Android.
 
 ## Gameplay and rendering
-- `GameController` owns ready/playing/paused/game-over state and uses the same score-dependent choice/travel timing as iOS.
+- `GameController` owns startup countdown plus ready/playing/paused/game-over state and uses the same data-driven `GameMode` timing/rules as iOS.
+- `GameMode` centralizes Classic/Rush/Precision/Daily/Zen. Daily derives the same calendar-day seed contract as iOS, Precision limits branch changes, and Zen remains non-competitive with collision-to-next-round practice behavior.
 - `RoundGenerator` ports the same SplitMix64 seed flow, quadratic future paths, hazard progress, safe-path gem progress, and branch rules as the Swift model.
 - `GameScreen` draws both predicted paths, ghost positions, hazard, gem, portal, player, decision ring, and feedback ring through Compose `Canvas`.
 - One tap changes the selected future only during the decision phase. Pause/Game Over freeze the controller render clock, disable canvas input, hide the gameplay HUD/transient feedback, and strongly dim the frozen board before showing explicit Resume/Restart/Home actions.
 
 ## Meta and persistence
-- `PlayerProfile` persists first-run tutorial completion, lifetime/daily best, daily streak, gem balance, selected skin, and gem-unlocked skins with SharedPreferences.
+- `PlayerProfile` persists first-run tutorial completion, lifetime/daily best, daily streak, gem balance, selected skin, selected mode, and gem-unlocked skins with SharedPreferences.
+- `StartupScreen` uses the procedural COLLAPSE mark as a centered in-app startup splash so compact Android devices do not show an offset wordmark/logo composition.
 - Skin access mirrors iOS: Classic free, Aurora 25 gems, Solar 60 gems, Nebula/Obsidian/Frozen Quartz Plus-only.
 - Plus remains cosmetic/access-only. `BillingStore` now uses Google Play Billing Library 9.1.0 for weekly/monthly subscription ProductDetails, real Play checkout, purchase reconciliation/acknowledgement and restore checks. Sideload/debug installs do not receive fake prices or entitlements; real purchase testing requires the app/products to be configured in Google Play and distributed through a Play test track.
 

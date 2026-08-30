@@ -3,6 +3,7 @@ package com.collapse.game.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +52,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.collapse.game.domain.FeedbackKind
 import com.collapse.game.domain.FuturePath
 import com.collapse.game.domain.GameController
+import com.collapse.game.domain.GameMode
 import com.collapse.game.domain.GamePhase
 import com.collapse.game.domain.GamePoint
 import com.collapse.game.domain.GameState
@@ -65,10 +68,11 @@ import kotlin.math.sin
 fun GameScreen(
     profile: PlayerProfile,
     sensory: SensoryEngine,
+    mode: GameMode,
     isPlusUnlocked: Boolean,
     onHome: () -> Unit
 ) {
-    val controller = remember { GameController() }
+    val controller = remember(mode) { GameController(mode = mode) }
     val lifecycleOwner = LocalLifecycleOwner.current
     var recordedGameOver by remember { mutableStateOf(false) }
     var pausedByLifecycle by remember { mutableStateOf(false) }
@@ -128,6 +132,9 @@ fun GameScreen(
                 .alpha(if (overlayActive) 0.10f else 1f)
         )
         if (!overlayActive) GameHud(controller, profile, skin)
+        if (controller.state == GameState.Playing && controller.phase == GamePhase.Ready) {
+            CountdownOverlay(controller, skin)
+        }
         if (controller.state == GameState.Paused) {
             OverlayShade()
             PauseOverlay(
@@ -168,6 +175,7 @@ private fun GameHud(controller: GameController, profile: PlayerProfile, skin: Ga
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     CollapseBrandMark(skin.palette.primary, subtitle = "", compact = true)
+                    Text(controller.mode.title, color = Color.White.copy(alpha = 0.48f), fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
                     Text("◉ DỰ BÁO ${"%.1f".format(controller.choiceDurationSeconds)}s", color = skin.palette.primary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp)
                     Text("🔥 ${profile.dailyRunStreak} ngày  ·  ◆ ${profile.gemBalance + controller.economy.gems}", color = Color.White.copy(alpha = 0.62f), fontSize = 10.sp)
                 }
@@ -176,14 +184,18 @@ private fun GameHud(controller: GameController, profile: PlayerProfile, skin: Ga
                     Text("ĐIỂM", color = Color.White.copy(alpha = 0.46f), fontSize = 9.sp, letterSpacing = 1.6.sp)
                 }
                 Spacer(Modifier.size(8.dp))
-                OutlinedButton(
+                IconButton(
                     onClick = controller::pause,
-                    enabled = controller.state == GameState.Playing,
-                    modifier = Modifier.size(48.dp),
-                    shape = CircleShape,
-                    contentPadding = ButtonDefaults.ContentPadding
+                    enabled = controller.state == GameState.Playing && controller.phase != GamePhase.Ready,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
+                        .alpha(if (controller.phase == GamePhase.Ready) 0f else 1f)
                 ) {
-                    Text("Ⅱ", color = skin.palette.primary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Box(Modifier.size(width = 3.dp, height = 15.dp).background(skin.palette.primary, RoundedCornerShape(2.dp)))
+                        Box(Modifier.size(width = 3.dp, height = 15.dp).background(skin.palette.primary, RoundedCornerShape(2.dp)))
+                    }
                 }
             }
         }
@@ -199,6 +211,26 @@ private fun GameHud(controller: GameController, profile: PlayerProfile, skin: Ga
                     letterSpacing = 1.2.sp
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CountdownOverlay(controller: GameController, skin: GameSkin) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(118.dp)
+                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                .border(1.dp, skin.palette.primary.copy(alpha = 0.34f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                controller.countdownLabel().orEmpty(),
+                color = Color.White,
+                fontSize = 50.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

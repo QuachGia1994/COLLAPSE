@@ -2,21 +2,29 @@ import SwiftUI
 
 @MainActor
 struct GameView: View {
+    let mode: GameMode
+
     @Environment(PlayerProfile.self) private var profile
     @Environment(EntitlementStore.self) private var entitlement
     @Environment(SensoryEngine.self) private var sensory
     @Environment(RunActivityController.self) private var runActivity
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
-    @State private var engine = GameEngine()
+    @State private var engine: GameEngine
     @State private var pausedByScenePhase = false
     @State private var isFinalizingRun = false
+
+    init(mode: GameMode) {
+        self.mode = mode
+        _engine = State(initialValue: GameEngine(mode: mode))
+    }
 
     var body: some View {
         ZStack {
             GameBoardView(engine: engine, skin: activeSkin)
                 .ignoresSafeArea()
             hud
+            if engine.phase == .ready, engine.state == .playing { countdownOverlay }
             if engine.state == .paused { overlayBackground }
             if engine.state == .gameOver { overlayBackground }
             if engine.state == .paused { pauseCard }
@@ -25,6 +33,9 @@ struct GameView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { startRun() }
         .onChange(of: engine.score) { _, score in syncLiveActivity(score: score) }
+        .onChange(of: engine.phase) { _, phase in
+            if phase == .choosing { syncLiveActivity(score: engine.score) }
+        }
         .onChange(of: engine.state) { _, state in handleStateChange(state) }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onDisappear { handleDisappear() }
@@ -48,6 +59,10 @@ struct GameView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 CollapseBrandMark(tint: activeSkin.palette.primary, subtitle: "", compact: true)
+                Text(mode.title)
+                    .font(.caption2.weight(.semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(.secondary)
                 Label("DỰ BÁO \(engine.choiceDuration, format: .number.precision(.fractionLength(1)))s", systemImage: "eye")
                     .font(.caption2.monospaced().weight(.semibold))
                     .foregroundStyle(activeSkin.palette.primary)
@@ -80,16 +95,37 @@ struct GameView: View {
     private var pauseButton: some View {
         Button { engine.pause() } label: {
             Image(systemName: "pause.fill")
-                .font(.headline.weight(.semibold))
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(activeSkin.palette.primary)
                 .frame(width: 44, height: 44)
+                .background(.thinMaterial, in: Circle())
+                .overlay { Circle().stroke(.white.opacity(0.24), lineWidth: 1) }
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.circle)
-        .tint(activeSkin.palette.primary)
-        .opacity(engine.state == .playing ? 1 : 0)
-        .disabled(engine.state != .playing)
+        .buttonStyle(.plain)
+        .frame(width: 48, height: 48, alignment: .center)
+        .opacity(engine.state == .playing && engine.phase != .ready ? 1 : 0)
+        .disabled(engine.state != .playing || engine.phase == .ready)
         .accessibilityLabel("Tạm dừng")
         .accessibilityIdentifier("game.pause")
+    }
+
+    private var countdownOverlay: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                Circle()
+                    .fill(.thinMaterial)
+                    .frame(width: 118, height: 118)
+                    .overlay { Circle().stroke(activeSkin.palette.primary.opacity(0.32), lineWidth: 1.5) }
+                Text(engine.countdownLabel(at: time) ?? "")
+                    .font(.system(size: 50, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+            }
+            .transition(.scale.combined(with: .opacity))
+            .allowsHitTesting(false)
+            .accessibilityLabel("Bắt đầu sau \(engine.countdownLabel(at: time) ?? "")")
+        }
     }
 
     private var choiceHint: some View {
@@ -193,7 +229,8 @@ struct GameView: View {
     }
 
     private func startLiveActivity() async {
-        guard scenePhase == .active, engine.state == .playing else { return }
+        guard mode.isCompetitive else { return }
+        guard scenePhase == .active, engine.state == .playing, engine.phase != .ready else { return }
         await runActivity.start(
             score: engine.score,
             streak: profile.dailyRunStreak,
@@ -203,7 +240,8 @@ struct GameView: View {
     }
 
     private func syncLiveActivity(score: Int) {
-        guard scenePhase == .active, engine.state == .playing else { return }
+        guard mode.isCompetitive else { return }
+        guard scenePhase == .active, engine.state == .playing, engine.phase != .ready else { return }
         Task {
             if runActivity.isActive {
                 await runActivity.update(
@@ -250,7 +288,9 @@ struct GameView: View {
         isFinalizingRun = true
         Task {
             await endLiveActivity()
-            await profile.record(score: engine.score, gemsEarned: engine.economy.gems)
+            if mode.isCompetitive {
+                await profile.record(score: engine.score, gemsEarned: engine.economy.gems)
+            }
             isFinalizingRun = false
         }
     }

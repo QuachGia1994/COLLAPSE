@@ -12,12 +12,14 @@ Product direction and monetization boundaries: `../biz/product.md`.
 - The default animation schedule uses a 1/60 minimum interval, while the render-work budget stays at 8.3 ms to preserve 120 Hz headroom when measured hardware/gameplay needs justify raising cadence. Optimization beyond this baseline is deferred until profiling proves a hot path.
 
 ## State and domain
-- `GameEngine` is the `@MainActor @Observable` reference-semantic owner for run state, deterministic rounds, timers, score, run gems, collision, and transient feedback events.
+- `GameEngine` is the `@MainActor @Observable` reference-semantic owner for startup countdown, selected `GameMode`, run state, deterministic rounds, timers, score, run gems, collision, and transient feedback events.
+- `GameMode` centralizes Classic/Rush/Precision/Daily/Zen timing and rule differences. Daily derives a stable local-calendar seed; Precision caps branch switches; Zen is explicitly non-competitive and converts collision into round continuation.
 - `RoundLayout`, `FuturePath`, `Hazard`, `Gem`, `RunEconomy`, and render snapshots are value types and `Sendable` where they cross isolation boundaries.
 - A safe-path gem is presentation-economy reward only. It cannot alter score, hazard placement, decision time, or collision rules.
 
 ## Persistence and feedback
-- `PlayerProfile` owns UserDefaults-backed tutorial, best score, daily best/streak, top scores, gem balance, unlocked skins, and selected skin state.
+- `PlayerProfile` owns UserDefaults-backed tutorial, best score, daily best/streak, top scores, gem balance, unlocked skins, selected skin, and selected mode state.
+- `StartupView` provides a centered procedural brand/logo splash before Home/Tutorial without adding a new external visual asset.
 - Run completion records score and gems through an async API; persistence remains behind the profile boundary rather than inside rendering or StoreKit code.
 - `SensoryEngine` owns Core Haptics and procedural AVAudio feedback for guidance, commit, gem, success, and collision. `GameEngine` depends only on `SensoryClient` closures.
 

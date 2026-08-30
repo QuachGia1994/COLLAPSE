@@ -9,10 +9,19 @@ COLLAPSE is a one-tap mobile game: the player sees two near-future timelines, ta
 4. The rejected future collapses.
 5. Survive the chosen path, collect the safe-path gem, score, and immediately receive the next prediction.
 
-The game never hides the outcome that matters to the current decision. Difficulty comes from shorter decision time and denser future modifiers, not invisible hazards.
+The game never hides the outcome that matters to the current decision. Every run now starts with a gated `3 → 2 → 1 → GO` countdown so the first prediction is readable before timing begins.
+
+## Modes
+- `CLASSIC` — balanced original timing.
+- `RUSH` — shorter decision window and faster travel from round one.
+- `PRECISION` — one branch switch per round plus larger hazard pressure.
+- `DAILY` — deterministic local-calendar-day seed with a fixed daily timeline.
+- `ZEN` — slower practice mode; collisions advance to another round instead of ending the run and the mode is excluded from competitive score persistence/Live Activity.
+
+Mode rules are centralized in `GameMode` on both platforms; they do not fork the core two-future mechanic.
 
 ## iOS runtime
-- `GameEngine`: `@MainActor @Observable` owner for ready, playing, paused, game-over, deterministic rounds, timing, collision, score, run gems, and transient feedback.
+- `GameEngine`: `@MainActor @Observable` owner for startup countdown, ready/playing/paused/game-over state, selected `GameMode`, deterministic rounds, timing, collision, score, run gems, and transient feedback.
 - `GameBoardView`: pure SwiftUI `TimelineView(.animation(minimumInterval: 1.0 / 60.0))` + `Canvas` loop.
 - `GameRenderSnapshot` + `CollapseCanvasRenderer`: immutable render input and procedural SwiftUI drawing for paths, hazard spikes, gem, portal, player pulse, decision ring, and feedback rings.
 - SwiftUI `.thinMaterial` / `.regularMaterial`: Liquid Glass surfaces for the HUD, cards, home, skins, and Plus paywall without UIKit color/view bridges.
@@ -23,7 +32,7 @@ The default animation schedule uses `minimumInterval: 1.0 / 60.0`. `RenderBudget
 
 ## Android runtime
 - Android is no longer a reduced test client. The current iOS flow is the shared visual/behavior source of truth for Home, tutorial, gameplay, Pause/Resume, Game Over, branding, skins, gem economy, Plus presentation, timing, and navigation.
-- `GameController` ports the same deterministic SplitMix64 round generation, choice/travel timing, hazard branch, safe-path gem, score, pause/restart, and game-over state.
+- `GameController` ports the same startup countdown, `GameMode` configuration, deterministic SplitMix64 round generation, choice/travel timing, hazard branch, safe-path gem, score, pause/restart, and game-over state.
 - Jetpack Compose `Canvas` renders both future paths, ghost positions, hazard, gem, portal, player, decision ring, and feedback ring; there is no second legacy Android renderer.
 - SharedPreferences persist tutorial completion, daily/lifetime score, streak, gems, selected skin, and gem unlocks. Android `Vibrator` + procedural `ToneGenerator` provide branch, commit, gem, success, and collision feedback.
 - Dynamic Island/ActivityKit stays iOS-only. Android does not imitate platform-specific UI.

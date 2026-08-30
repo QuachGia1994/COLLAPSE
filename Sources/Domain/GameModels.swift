@@ -105,6 +105,14 @@ struct SplitMix64: RandomNumberGenerator, Sendable {
 
 struct RoundGenerator: Sendable {
     let baseSeed: UInt64
+    let hazardRadiusMultiplier: Double
+    let gemValue: Int
+
+    init(baseSeed: UInt64, hazardRadiusMultiplier: Double = 1.0, gemValue: Int = 1) {
+        self.baseSeed = baseSeed
+        self.hazardRadiusMultiplier = hazardRadiusMultiplier
+        self.gemValue = gemValue
+    }
 
     func makeRound(index: Int) -> RoundLayout {
         var random = SplitMix64(seed: baseSeed &+ UInt64(index) &* 0x9E3779B97F4A7C15)
@@ -143,7 +151,11 @@ struct RoundGenerator: Sendable {
     ) -> Hazard {
         let progress = 0.58 + random.unit() * 0.14
         let path = dangerBranch == .cyan ? paths.cyan : paths.violet
-        return Hazard(center: path.point(at: progress), radius: 0.055, pathProgress: progress)
+        return Hazard(
+            center: path.point(at: progress),
+            radius: 0.055 * hazardRadiusMultiplier,
+            pathProgress: progress
+        )
     }
 
     private func makeGem(
@@ -153,6 +165,6 @@ struct RoundGenerator: Sendable {
     ) -> Gem {
         let progress = 0.42 + random.unit() * 0.12
         let path = safeBranch == .cyan ? paths.cyan : paths.violet
-        return Gem(center: path.point(at: progress), radius: 0.024, pathProgress: progress, value: 1)
+        return Gem(center: path.point(at: progress), radius: 0.024, pathProgress: progress, value: gemValue)
     }
 }

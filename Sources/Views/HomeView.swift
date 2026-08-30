@@ -17,6 +17,7 @@ struct HomeView: View {
                         VStack(spacing: 20) {
                             CollapseBrandMark(tint: activeSkin.palette.primary)
                             homeOrb
+                            modePicker
                             actionCard
                             metricsCard
                             tutorialButton
@@ -87,7 +88,7 @@ struct HomeView: View {
 
     private var actionCard: some View {
         VStack(spacing: 12) {
-            NavigationLink { GameView() } label: {
+            NavigationLink { GameView(mode: profile.selectedMode) } label: {
                 Label("CHƠI", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
             }
@@ -114,6 +115,39 @@ struct HomeView: View {
         .frame(maxWidth: 380)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
         .overlay { glassBorder(cornerRadius: 26) }
+    }
+
+    private var modePicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("MODE · \(profile.selectedMode.title)")
+                        .font(.caption.weight(.semibold))
+                        .tracking(1.6)
+                    Text(profile.selectedMode.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(GameMode.allCases) { mode in
+                        Button(mode.title) { profile.selectedMode = mode }
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.capsule)
+                            .tint(profile.selectedMode == mode ? activeSkin.palette.primary : Color.gray)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: 380)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay { glassBorder(cornerRadius: 24) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Chế độ \(profile.selectedMode.title)")
     }
 
     private var metricsCard: some View {

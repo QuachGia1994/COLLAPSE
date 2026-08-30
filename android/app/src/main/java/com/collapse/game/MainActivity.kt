@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,7 +27,9 @@ import com.collapse.game.ui.GameScreen
 import com.collapse.game.ui.HomeScreen
 import com.collapse.game.ui.PlusScreen
 import com.collapse.game.ui.SkinScreen
+import com.collapse.game.ui.StartupScreen
 import com.collapse.game.ui.TutorialScreen
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +64,12 @@ private fun CollapseApp() {
     val billing = remember { BillingStore(context.applicationContext) }
     var route by remember { mutableStateOf(if (profile.didCompleteTutorial) AppRoute.Home else AppRoute.Tutorial) }
     var tutorialReplay by remember { mutableStateOf(false) }
+    var showsStartup by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(720)
+        showsStartup = false
+    }
 
     DisposableEffect(sensory, billing, lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -72,6 +81,11 @@ private fun CollapseApp() {
             sensory.close()
             billing.close()
         }
+    }
+
+    if (showsStartup) {
+        StartupScreen()
+        return
     }
 
     BackHandler(enabled = route != AppRoute.Home && route != AppRoute.Game) {
@@ -104,6 +118,7 @@ private fun CollapseApp() {
         AppRoute.Game -> GameScreen(
             profile = profile,
             sensory = sensory,
+            mode = profile.selectedMode,
             isPlusUnlocked = billing.isPlusUnlocked,
             onHome = { route = AppRoute.Home }
         )

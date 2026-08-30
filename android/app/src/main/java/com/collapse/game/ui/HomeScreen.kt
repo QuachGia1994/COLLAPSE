@@ -2,6 +2,7 @@ package com.collapse.game.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.collapse.game.domain.GameMode
 import com.collapse.game.services.PlayerProfile
 
 @Composable
@@ -63,6 +65,8 @@ fun HomeScreen(
             Spacer(Modifier.height(18.dp))
             HomeOrb(skin)
             Spacer(Modifier.height(18.dp))
+            ModePicker(profile, skin)
+            Spacer(Modifier.height(14.dp))
             HomeActions(skin, onPlay, onSkins, onPlus)
             Spacer(Modifier.height(18.dp))
             HomeMetrics(profile)
@@ -70,6 +74,42 @@ fun HomeScreen(
                 Text("Xem lại hướng dẫn", color = Color.White.copy(alpha = 0.52f), fontSize = 13.sp)
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun ModePicker(profile: PlayerProfile, skin: GameSkin) {
+    GlassSurface(modifier = Modifier.fillMaxWidth(), radius = 24.dp) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "MODE · ${profile.selectedMode.title}",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.4.sp
+            )
+            Text(
+                profile.selectedMode.subtitle,
+                color = Color.White.copy(alpha = 0.52f),
+                fontSize = 12.sp
+            )
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                GameMode.entries.forEach { mode ->
+                    OutlinedButton(
+                        onClick = { profile.selectMode(mode) },
+                        shape = RoundedCornerShape(99.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (profile.selectedMode == mode) skin.palette.primary else Color.White.copy(alpha = 0.70f)
+                        )
+                    ) {
+                        Text(mode.title, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
         }
     }
 }
