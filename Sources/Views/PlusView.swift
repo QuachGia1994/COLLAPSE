@@ -165,8 +165,12 @@ struct PlusView: View {
             Circle()
                 .stroke(.white.opacity(0.20), lineWidth: 1)
                 .frame(width: 204, height: 204)
-            Image(systemName: "plus")
-                .font(.system(size: 42, weight: .light))
+            CollapseLogoSymbol(tint: .yellow)
+                .frame(width: 92, height: 92)
+            Image(systemName: "plus.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.yellow)
+                .offset(x: 58, y: 58)
         }
         .padding(.top, 18)
     }

@@ -75,6 +75,26 @@ final class GameEngineTests: XCTestCase {
     }
 
     @MainActor
+    func testRestartResetsPausedRunStateAndEconomy() {
+        let engine = GameEngine(seed: 21, sensory: .silent)
+        let start = 100.0
+        engine.start(at: start)
+        engine.selectedBranch = engine.round.safeBranch
+        let commit = start + engine.choiceDuration + 0.01
+        engine.tick(at: commit)
+        engine.tick(at: commit + engine.travelDuration + 0.01)
+        engine.pause(at: 102)
+
+        engine.restart(at: 200)
+
+        XCTAssertEqual(engine.state, .playing)
+        XCTAssertEqual(engine.phase, .choosing)
+        XCTAssertEqual(engine.score, 0)
+        XCTAssertEqual(engine.economy.gems, 0)
+        XCTAssertEqual(engine.travelProgress, 0)
+    }
+
+    @MainActor
     func testDailyStreakLeaderboardAndGemUnlock() async {
         let suite = "collapse.tests.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else {

@@ -7,20 +7,24 @@ struct GameView: View {
     @Environment(SensoryEngine.self) private var sensory
     @Environment(RunActivityController.self) private var runActivity
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
     @State private var engine = GameEngine()
     @State private var pausedByScenePhase = false
+    @State private var isFinalizingRun = false
 
     var body: some View {
         ZStack {
             GameBoardView(engine: engine, skin: activeSkin)
                 .ignoresSafeArea()
             hud
+            if engine.state == .paused { overlayBackground }
+            if engine.state == .gameOver { overlayBackground }
             if engine.state == .paused { pauseCard }
             if engine.state == .gameOver { deathCard }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .task { await startRun() }
-        .onChange(of: engine.score) { _, score in updateLiveActivity(score: score) }
+        .task { startRun() }
+        .onChange(of: engine.score) { _, score in syncLiveActivity(score: score) }
         .onChange(of: engine.state) { _, state in handleStateChange(state) }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onDisappear { handleDisappear() }
@@ -36,55 +40,56 @@ struct GameView: View {
             Spacer()
             if engine.phase == .choosing, engine.state == .playing { choiceHint }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     private var topHUD: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("COLLAPSE")
-                    .font(.caption.weight(.medium))
-                    .tracking(4)
-                    .foregroundStyle(.white.opacity(0.78))
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                CollapseBrandMark(tint: activeSkin.palette.primary, subtitle: "", compact: true)
                 Label("DỰ BÁO \(engine.choiceDuration, format: .number.precision(.fractionLength(1)))s", systemImage: "eye")
                     .font(.caption2.monospaced().weight(.semibold))
                     .foregroundStyle(activeSkin.palette.primary)
                 Text("🔥 \(profile.dailyRunStreak) ngày  ·  ◆ \(profile.gemBalance + engine.economy.gems)")
                     .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.white.opacity(0.64))
             }
-            Spacer()
-            scoreControls
+            Spacer(minLength: 8)
+            scoreBlock
+            pauseButton
         }
-        .padding(14)
+        .padding(12)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(.white.opacity(0.10), lineWidth: 1)
-        }
+        .overlay { glassBorder(cornerRadius: 24) }
     }
 
-    private var scoreControls: some View {
-        VStack(alignment: .trailing, spacing: 5) {
+    private var scoreBlock: some View {
+        VStack(spacing: 2) {
             Text("\(engine.score)")
-                .font(.system(size: 38, weight: .semibold, design: .rounded))
+                .font(.system(size: 34, weight: .semibold, design: .rounded))
+                .monospacedDigit()
             Text("ĐIỂM")
                 .font(.caption2)
-                .tracking(2)
-                .foregroundStyle(.white.opacity(0.50))
-            Button {
-                engine.pause()
-            } label: {
-                Image(systemName: "pause.fill")
-                    .font(.caption.weight(.semibold))
-                    .frame(width: 30, height: 30)
-            }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
-            .opacity(engine.state == .playing ? 1 : 0)
-            .disabled(engine.state != .playing)
+                .tracking(1.6)
+                .foregroundStyle(.secondary)
         }
+        .frame(minWidth: 54)
+    }
+
+    private var pauseButton: some View {
+        Button { engine.pause() } label: {
+            Image(systemName: "pause.fill")
+                .font(.headline.weight(.semibold))
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+        .tint(activeSkin.palette.primary)
+        .opacity(engine.state == .playing ? 1 : 0)
+        .disabled(engine.state != .playing)
+        .accessibilityLabel("Tạm dừng")
+        .accessibilityIdentifier("game.pause")
     }
 
     private var choiceHint: some View {
@@ -95,8 +100,8 @@ struct GameView: View {
             Text("CHẠM ĐỂ ĐỔI TƯƠNG LAI")
         }
         .font(.caption.weight(.semibold))
-        .tracking(1.4)
-        .foregroundStyle(.white.opacity(0.80))
+        .tracking(1.3)
+        .foregroundStyle(.white.opacity(0.82))
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.regularMaterial, in: Capsule())
@@ -105,51 +110,67 @@ struct GameView: View {
         .allowsHitTesting(false)
     }
 
+    private var overlayBackground: some View {
+        Color.black.opacity(0.42)
+            .ignoresSafeArea()
+            .transition(.opacity)
+    }
+
     private var pauseCard: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "pause.circle.fill")
-                .font(.system(size: 38))
-                .foregroundStyle(activeSkin.palette.primary)
-            Text("TẠM DỪNG")
-                .font(.headline)
-                .tracking(2)
+        VStack(spacing: 16) {
+            CollapseBrandMark(tint: activeSkin.palette.primary, subtitle: "TẠM DỪNG", compact: true)
             Button("TIẾP TỤC") { engine.resume() }
                 .buttonStyle(.borderedProminent)
                 .tint(activeSkin.palette.primary)
+                .controlSize(.large)
+                .accessibilityIdentifier("game.resume")
+            HStack(spacing: 10) {
+                Button("CHƠI LẠI") { restartRun() }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("game.pause.restart")
+                Button("VỀ TRANG CHỦ") { leaveGame() }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("game.pause.home")
+            }
         }
+        .padding(22)
+        .frame(maxWidth: 340)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay { glassBorder(cornerRadius: 28) }
         .padding(24)
-        .frame(maxWidth: 280)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 
     private var deathCard: some View {
-        VStack(spacing: 14) {
-            Text("MẤT DÒNG THỜI GIAN")
-                .font(.title2.weight(.semibold))
-                .tracking(3)
+        VStack(spacing: 15) {
+            CollapseBrandMark(tint: activeSkin.palette.danger, subtitle: "DÒNG THỜI GIAN ĐÃ VỠ", compact: true)
             Text("Dự báo đã cho thấy tương lai này đi xuyên vùng đỏ.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            HStack(spacing: 20) {
+            HStack(spacing: 18) {
                 stat("ĐIỂM", value: "\(engine.score)")
                 stat("GEM", value: "+\(engine.economy.gems)")
-                stat("KỶ LỤC", value: "\(profile.bestScore)")
+                stat("KỶ LỤC", value: "\(max(profile.bestScore, engine.score))")
             }
-            Button("THỬ TƯƠNG LAI KHÁC") {
-                engine.restart()
-                Task { await startLiveActivity() }
+            if isFinalizingRun {
+                ProgressView("Đang lưu lượt chơi…")
+                    .font(.caption)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(activeSkin.palette.primary)
+            Button("CHƠI LẠI") { restartRun() }
+                .buttonStyle(.borderedProminent)
+                .tint(activeSkin.palette.primary)
+                .controlSize(.large)
+                .disabled(isFinalizingRun)
+                .accessibilityIdentifier("game.over.restart")
+            Button("VỀ TRANG CHỦ") { leaveGame() }
+                .buttonStyle(.bordered)
+                .disabled(isFinalizingRun)
+                .accessibilityIdentifier("game.over.home")
         }
-        .padding(24)
-        .frame(maxWidth: 350)
+        .padding(22)
+        .frame(maxWidth: 360)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 1)
-        }
+        .overlay { glassBorder(cornerRadius: 28) }
         .padding(24)
     }
 
@@ -159,35 +180,42 @@ struct GameView: View {
                 .font(.title3.monospacedDigit().weight(.semibold))
             Text(title)
                 .font(.caption2)
-                .tracking(1.5)
+                .tracking(1.4)
                 .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private func startRun() async {
+    private func startRun() {
         engine.connectSensory(sensory.client)
         profile.registerRunStart()
         engine.start()
-        await startLiveActivity()
     }
 
     private func startLiveActivity() async {
+        guard scenePhase == .active, engine.state == .playing else { return }
         await runActivity.start(
+            score: engine.score,
             streak: profile.dailyRunStreak,
-            bestScore: profile.bestScore,
+            bestScore: max(profile.bestScore, engine.score),
             localRank: profile.localRank(for: engine.score)
         )
     }
 
-    private func updateLiveActivity(score: Int) {
+    private func syncLiveActivity(score: Int) {
+        guard scenePhase == .active, engine.state == .playing else { return }
         Task {
-            await runActivity.update(
-                score: score,
-                bestScore: max(profile.bestScore, score),
-                streak: profile.dailyRunStreak,
-                localRank: profile.localRank(for: score),
-                status: .playing
-            )
+            if runActivity.isActive {
+                await runActivity.update(
+                    score: score,
+                    bestScore: max(profile.bestScore, score),
+                    streak: profile.dailyRunStreak,
+                    localRank: profile.localRank(for: score),
+                    status: .playing
+                )
+                return
+            }
+            await startLiveActivity()
         }
     }
 
@@ -196,11 +224,12 @@ struct GameView: View {
         case .ready:
             return
         case .playing:
-            updateLiveActivity(score: engine.score)
+            syncLiveActivity(score: engine.score)
         case .paused:
+            guard !pausedByScenePhase else { return }
             updatePausedActivity()
         case .gameOver:
-            finishRun()
+            finalizeRun()
         }
     }
 
@@ -216,42 +245,75 @@ struct GameView: View {
         }
     }
 
-    private func finishRun() {
+    private func finalizeRun() {
+        guard !isFinalizingRun else { return }
+        isFinalizingRun = true
         Task {
+            await endLiveActivity()
             await profile.record(score: engine.score, gemsEarned: engine.economy.gems)
-            await runActivity.end(
-                score: engine.score,
-                bestScore: profile.bestScore,
-                streak: profile.dailyRunStreak,
-                localRank: profile.localRank(for: engine.score)
-            )
+            isFinalizingRun = false
+        }
+    }
+
+    private func restartRun() {
+        guard !isFinalizingRun else { return }
+        profile.registerRunStart()
+        engine.restart()
+    }
+
+    private func leaveGame() {
+        guard !isFinalizingRun else { return }
+        Task {
+            await endLiveActivity()
+            dismiss()
         }
     }
 
     private func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            guard pausedByScenePhase, engine.state == .paused else { return }
-            pausedByScenePhase = false
-            engine.resume()
-        case .inactive, .background:
-            guard engine.state == .playing else { return }
-            pausedByScenePhase = true
-            engine.pause()
+            resumeAfterSceneActivation()
+        case .inactive:
+            pauseForSceneDeactivation()
+            Task { await endLiveActivity() }
+        case .background:
+            Task { await endLiveActivity() }
         @unknown default:
             return
         }
     }
 
+    private func pauseForSceneDeactivation() {
+        guard engine.state == .playing else { return }
+        pausedByScenePhase = true
+        engine.pause()
+    }
+
+    private func resumeAfterSceneActivation() {
+        guard pausedByScenePhase, engine.state == .paused else { return }
+        pausedByScenePhase = false
+        engine.resume()
+    }
+
     private func handleDisappear() {
-        if engine.state == .playing { engine.pause() }
-        Task {
-            await runActivity.end(
-                score: engine.score,
-                bestScore: max(profile.bestScore, engine.score),
-                streak: profile.dailyRunStreak,
-                localRank: profile.localRank(for: engine.score)
-            )
+        if engine.state == .playing {
+            pausedByScenePhase = true
+            engine.pause()
         }
+        Task { await endLiveActivity() }
+    }
+
+    private func endLiveActivity() async {
+        await runActivity.end(
+            score: engine.score,
+            bestScore: max(profile.bestScore, engine.score),
+            streak: profile.dailyRunStreak,
+            localRank: profile.localRank(for: engine.score)
+        )
+    }
+
+    private func glassBorder(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .stroke(.white.opacity(0.12), lineWidth: 1)
     }
 }

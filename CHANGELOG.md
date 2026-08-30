@@ -28,6 +28,10 @@
 - CI now builds the app and Live Activity extension on the GitHub Actions Xcode 27 public-preview runner and uploads `COLLAPSE-iOS-Simulator-Xcode27`.
 
 ### Fixed
+- Tutorial replay now reuses the full three-step procedural gameplay tutorial instead of opening a black text-only pager, with balanced portrait layout and explicit close/next/finish actions.
+- Home, tutorial, Plus, pause, and game-over surfaces now share a procedural COLLAPSE brand mark so the app has a visible identity without adding external image assets.
+- Gameplay now exposes a persistent 44-point Pause control; paused runs provide Resume, Restart, and Home, while game-over provides Restart and Home instead of a dead-end overlay.
+- Live Activity ownership now follows gameplay visibility: inactive/background/disappearing gameplay ends Dynamic Island immediately, stale activities are cleared on next launch, and start/restart/resume paths avoid duplicate activities.
 - CI test-host resolution now uses the same `Collapse.app/Collapse` product name expected by the generated unit-test target.
 - Xcode 27 ActivityKit updates no longer send a main-actor-isolated `Activity` reference into `@concurrent` APIs; the controller keeps only the activity ID and resolves each activity inside a nonisolated helper.
 - Android debug builds now enable AndroidX explicitly so Compose dependencies pass AAR metadata validation.

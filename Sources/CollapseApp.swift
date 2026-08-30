@@ -16,6 +16,9 @@ struct CollapseApp: App {
                 .environment(entitlement)
                 .environment(sensory)
                 .environment(runActivity)
+                .task {
+                    await runActivity.cleanupStaleActivities()
+                }
         }
     }
 

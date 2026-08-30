@@ -9,26 +9,30 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                background
-                glassBackdrop
-                VStack(spacing: 24) {
-                    Spacer()
-                    logo
-                    homeOrb
-                    actionCard
-                    metricsCard
-                    Button("Xem lại hướng dẫn") { showsTutorial = true }
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 22)
+            GeometryReader { proxy in
+                ZStack {
+                    background
+                    glassBackdrop
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            CollapseBrandMark(tint: activeSkin.palette.primary)
+                            homeOrb
+                            actionCard
+                            metricsCard
+                            tutorialButton
+                        }
+                        .frame(maxWidth: 410)
+                        .frame(minHeight: proxy.size.height, alignment: .center)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 18)
+                        .frame(maxWidth: .infinity)
+                    }
                 }
-                .padding(22)
             }
             .toolbar(.hidden, for: .navigationBar)
         }
         .sheet(isPresented: $showsPlus) { PlusView() }
-        .fullScreenCover(isPresented: $showsTutorial) { TutorialReplayView() }
+        .fullScreenCover(isPresented: $showsTutorial) { TutorialView(isReplay: true) }
     }
 
     private var activeSkin: GameSkin {
@@ -45,32 +49,22 @@ struct HomeView: View {
     }
 
     private var glassBackdrop: some View {
-        ZStack {
-            Circle()
-                .fill(.thinMaterial)
-                .frame(width: 320, height: 320)
-                .offset(x: -140, y: -270)
-                .opacity(0.24)
-            Circle()
-                .fill(.regularMaterial)
-                .frame(width: 280, height: 280)
-                .offset(x: 150, y: 290)
-                .opacity(0.18)
+        GeometryReader { proxy in
+            ZStack {
+                glassCircle(diameter: min(proxy.size.width * 0.78, 320), x: -proxy.size.width * 0.32, y: -proxy.size.height * 0.30, opacity: 0.22)
+                glassCircle(diameter: min(proxy.size.width * 0.68, 280), x: proxy.size.width * 0.34, y: proxy.size.height * 0.32, opacity: 0.16)
+            }
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
     }
 
-    private var logo: some View {
-        VStack(spacing: 8) {
-            Text("COLLAPSE")
-                .font(.system(size: 38, weight: .light, design: .rounded))
-                .tracking(8)
-            Text("CHỌN TƯƠNG LAI")
-                .font(.caption2.weight(.medium))
-                .tracking(3)
-                .foregroundStyle(.secondary)
-        }
+    private func glassCircle(diameter: CGFloat, x: CGFloat, y: CGFloat, opacity: Double) -> some View {
+        Circle()
+            .fill(.thinMaterial)
+            .frame(width: diameter, height: diameter)
+            .offset(x: x, y: y)
+            .opacity(opacity)
     }
 
     private var homeOrb: some View {
@@ -78,24 +72,22 @@ struct HomeView: View {
         return ZStack {
             Circle()
                 .fill(.thinMaterial)
-                .frame(width: 224, height: 224)
             Circle()
-                .stroke(palette.primary.opacity(0.34), lineWidth: 2)
-                .frame(width: 220, height: 220)
+                .stroke(palette.primary.opacity(0.38), lineWidth: 2)
+                .padding(2)
             Circle().fill(palette.primary).frame(width: 16, height: 16).offset(x: -92)
             Circle().fill(palette.safe).frame(width: 17, height: 17).offset(x: 90, y: -55)
             Circle().stroke(palette.danger, lineWidth: 3).frame(width: 22, height: 22).offset(x: 72, y: 62)
             pathLine(color: palette.primary, rotation: -17)
             pathLine(color: palette.secondary, rotation: 20)
         }
-        .frame(height: 240)
+        .frame(width: 224, height: 224)
+        .accessibilityHidden(true)
     }
 
     private var actionCard: some View {
         VStack(spacing: 12) {
-            NavigationLink {
-                GameView()
-            } label: {
+            NavigationLink { GameView() } label: {
                 Label("CHƠI", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
             }
@@ -104,17 +96,13 @@ struct HomeView: View {
             .controlSize(.large)
 
             HStack(spacing: 10) {
-                NavigationLink {
-                    SkinGalleryView()
-                } label: {
+                NavigationLink { SkinGalleryView() } label: {
                     Label("SKIN", systemImage: "circle.hexagongrid")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
 
-                Button {
-                    showsPlus = true
-                } label: {
+                Button { showsPlus = true } label: {
                     Label("PLUS", systemImage: entitlement.isPlusUnlocked ? "checkmark.seal.fill" : "diamond.fill")
                         .frame(maxWidth: .infinity)
                 }
@@ -125,22 +113,31 @@ struct HomeView: View {
         .padding(14)
         .frame(maxWidth: 380)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(.white.opacity(0.10), lineWidth: 1)
-        }
+        .overlay { glassBorder(cornerRadius: 26) }
     }
 
     private var metricsCard: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 6) {
             metric(title: "KỶ LỤC", value: "\(profile.bestScore)")
             metric(title: "HÔM NAY", value: "\(profile.dailyBestScore)")
             metric(title: "STREAK", value: "🔥\(profile.dailyRunStreak)")
             metric(title: "GEM", value: "◆\(profile.gemBalance)")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(.thinMaterial, in: Capsule())
+        .padding(.horizontal, 10)
+        .padding(.vertical, 14)
+        .frame(maxWidth: 380)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay { glassBorder(cornerRadius: 24) }
+    }
+
+    private var tutorialButton: some View {
+        Button("Xem lại hướng dẫn") { showsTutorial = true }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .background(.thinMaterial, in: Capsule())
+            .accessibilityIdentifier("home.tutorial")
     }
 
     private func pathLine(color: Color, rotation: Double) -> some View {
@@ -154,58 +151,20 @@ struct HomeView: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.subheadline.monospacedDigit().weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
             Text(title)
                 .font(.caption2)
-                .tracking(1.4)
+                .tracking(1.2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
         }
-    }
-}
-
-@MainActor
-private struct TutorialReplayView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            TutorialPreviewPager()
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white.opacity(0.72))
-            }
-            .padding(20)
-        }
-    }
-}
-
-private struct TutorialPreviewPager: View {
-    @State private var page = 0
-
-    var body: some View {
-        TabView(selection: $page) {
-            tutorialPage("Nhìn 2 tương lai", "Hai đường cho biết trước kết quả.", "eye").tag(0)
-            tutorialPage("Chạm để đổi nhánh", "Một chạm đổi lựa chọn.", "hand.tap").tag(1)
-            tutorialPage("Chốt lựa chọn", "Hết thời gian, tương lai đã chọn thành hiện thực.", "checkmark.circle").tag(2)
-        }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .background(Color.black.ignoresSafeArea())
+        .frame(maxWidth: .infinity)
     }
 
-    private func tutorialPage(_ title: String, _ detail: String, _ symbol: String) -> some View {
-        VStack(spacing: 22) {
-            Spacer()
-            Image(systemName: symbol)
-                .font(.system(size: 56, weight: .light))
-                .foregroundStyle(.cyan)
-            Text(title)
-                .font(.title2.weight(.semibold))
-            Text(detail)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .padding(28)
+    private func glassBorder(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .stroke(.white.opacity(0.10), lineWidth: 1)
     }
 }

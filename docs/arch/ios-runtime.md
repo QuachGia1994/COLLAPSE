@@ -1,6 +1,6 @@
 # iOS runtime
 
-> updated 2026-08-30 · 6cfbf38
+> updated 2026-08-30 · dde37fd
 
 Product direction and monetization boundaries: `../biz/product.md`.
 
@@ -24,4 +24,4 @@ Product direction and monetization boundaries: `../biz/product.md`.
 ## Plus and external services
 - `EntitlementStore` owns StoreKit 2 product loading, purchase, restore, `Transaction.updates`, current entitlements, expiration, revocation, and verified transaction handling for weekly/monthly Plus.
 - Plus affects presentation/access only. When Plus expires, a selected Plus-only skin falls back to Classic without deleting the saved preference.
-- `RunActivityController` remains the ActivityKit boundary for Live Activity/Dynamic Island state and stores only the activity ID across MainActor state.
+- `RunActivityController` remains the ActivityKit boundary for Live Activity/Dynamic Island state, stores only the activity ID across MainActor state, dismisses immediately when gameplay leaves the foreground, clears stale activities on launch, and reconciles concurrent start requests to one activity.

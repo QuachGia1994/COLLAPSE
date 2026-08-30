@@ -17,7 +17,7 @@ The game never hides the outcome that matters to the current decision. Difficult
 - `GameRenderSnapshot` + `CollapseCanvasRenderer`: immutable render input and procedural SwiftUI drawing for paths, hazard spikes, gem, portal, player pulse, decision ring, and feedback rings.
 - SwiftUI `.thinMaterial` / `.regularMaterial`: Liquid Glass surfaces for the HUD, cards, home, skins, and Plus paywall without UIKit color/view bridges.
 - `SensoryEngine`: Core Haptics continuous guidance plus procedural `AVAudioEngine` tones for commit, gem, success, and collision.
-- `RunActivityController` + `CollapseWidgets`: ActivityKit Live Activity and Dynamic Island for streak, current score, best score, and local top-run rank.
+- `RunActivityController` + `CollapseWidgets`: ActivityKit Live Activity and Dynamic Island for streak, current score, best score, and local top-run rank; gameplay owns exactly one activity and dismisses it immediately when the game leaves the foreground.
 
 The default animation schedule uses `minimumInterval: 1.0 / 60.0`. `RenderBudgetMonitor` keeps an 8.3 ms render-work budget so the renderer retains headroom for 120 Hz hardware when a measured need justifies raising cadence; ownership-specific hot-path optimization stays deferred until profiling proves it is needed.
 
