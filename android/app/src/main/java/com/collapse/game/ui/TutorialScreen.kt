@@ -6,14 +6,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -61,49 +64,55 @@ fun TutorialScreen(
     var selectedBranch by remember { mutableStateOf(TimelineBranch.Cyan) }
     val item = tutorialItems[step]
 
-    Box(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Color(0xFF07101F), Color.Black)))
     ) {
+        val compactHeight = maxHeight < 760.dp
+        val boardHeight = if (compactHeight) 238.dp else 300.dp
+        val gap = if (compactHeight) 12.dp else 18.dp
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = 18.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CollapseBrandMark(tint = CollapseCyan, subtitle = "CÁCH CHƠI")
-            Spacer(Modifier.height(20.dp))
+            TutorialHeader(isReplay, onClose, onFinished)
+            Spacer(Modifier.height(gap))
             TutorialBoard(
                 step = step,
                 selectedBranch = selectedBranch,
+                boardHeight = boardHeight,
                 onTap = {
                     if (step == 1) selectedBranch = selectedBranch.other
                 }
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(gap))
             GlassSurface(Modifier.fillMaxWidth()) {
                 Column(
-                    Modifier.padding(20.dp),
+                    Modifier.padding(if (compactHeight) 14.dp else 18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(if (compactHeight) 5.dp else 8.dp)
                 ) {
-                    Text(item.cue, color = CollapseCyan, fontSize = 34.sp)
+                    Text(item.cue, color = CollapseCyan, fontSize = if (compactHeight) 26.sp else 32.sp)
                     Text("BƯỚC ${step + 1}", color = CollapseCyan, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
-                    Text(item.title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Text(item.detail, color = Color.White.copy(alpha = 0.52f), fontSize = 15.sp, textAlign = TextAlign.Center)
+                    Text(item.title, color = Color.White, fontSize = if (compactHeight) 21.sp else 24.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                    Text(item.detail, color = Color.White.copy(alpha = 0.52f), fontSize = if (compactHeight) 13.sp else 15.sp, textAlign = TextAlign.Center)
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(if (compactHeight) 10.dp else 16.dp))
             StepDots(step)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(if (compactHeight) 10.dp else 16.dp))
             Button(
                 onClick = {
                     if (step == tutorialItems.lastIndex) onFinished() else step += 1
                 },
-                modifier = Modifier.fillMaxWidth().height(54.dp),
+                modifier = Modifier.fillMaxWidth().height(if (compactHeight) 50.dp else 54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = CollapseCyan),
                 shape = RoundedCornerShape(27.dp)
             ) {
@@ -114,12 +123,29 @@ fun TutorialScreen(
                 }
                 Text(title, color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
         }
-        TextButton(
-            onClick = if (isReplay) onClose else onFinished,
-            modifier = Modifier.align(Alignment.TopEnd).padding(top = 24.dp, end = 12.dp)
-        ) {
+    }
+}
+
+@Composable
+private fun TutorialHeader(
+    isReplay: Boolean,
+    onClose: () -> Unit,
+    onFinished: () -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CollapseBrandMark(
+            tint = CollapseCyan,
+            subtitle = "CÁCH CHƠI",
+            compact = true,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = if (isReplay) onClose else onFinished) {
             Text(if (isReplay) "Đóng" else "Bỏ qua", color = Color.White, fontSize = 14.sp)
         }
     }
@@ -145,12 +171,13 @@ private fun StepDots(step: Int) {
 private fun TutorialBoard(
     step: Int,
     selectedBranch: TimelineBranch,
+    boardHeight: androidx.compose.ui.unit.Dp,
     onTap: () -> Unit
 ) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(310.dp)
+            .height(boardHeight)
             .background(Color.White.copy(alpha = 0.025f), RoundedCornerShape(28.dp))
             .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(28.dp))
             .pointerInput(step) { detectTapGestures { onTap() } }

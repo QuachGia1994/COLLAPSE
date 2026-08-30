@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -112,13 +113,21 @@ fun GameScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    val overlayActive = controller.state != GameState.Playing
     Box(
         Modifier
             .fillMaxSize()
             .background(Brush.radialGradient(listOf(skin.palette.backgroundTop, skin.palette.backgroundBottom)))
     ) {
-        GameCanvas(controller, skin, Modifier.fillMaxSize())
-        GameHud(controller, profile, skin)
+        GameCanvas(
+            controller = controller,
+            skin = skin,
+            interactive = !overlayActive,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(if (overlayActive) 0.10f else 1f)
+        )
+        if (!overlayActive) GameHud(controller, profile, skin)
         if (controller.state == GameState.Paused) {
             OverlayShade()
             PauseOverlay(
@@ -254,30 +263,41 @@ private fun GameOverOverlay(
 
 @Composable
 private fun OverlayShade() {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.46f)))
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.80f))
+            .pointerInput(Unit) { detectTapGestures { } }
+    )
 }
 
 @Composable
-private fun GameCanvas(controller: GameController, skin: GameSkin, modifier: Modifier) {
-    Canvas(
-        modifier.pointerInput(controller.state, controller.phase) {
+private fun GameCanvas(
+    controller: GameController,
+    skin: GameSkin,
+    interactive: Boolean,
+    modifier: Modifier
+) {
+    val inputModifier = if (interactive) {
+        modifier.pointerInput(controller.phase) {
             detectTapGestures {
-                if (controller.state == GameState.Playing && controller.phase == GamePhase.Choosing) {
-                    controller.toggleSelection()
-                }
+                if (controller.phase == GamePhase.Choosing) controller.toggleSelection()
             }
         }
-    ) {
+    } else {
+        modifier
+    }
+    Canvas(inputModifier) {
         val round = controller.round
         val cyan = screenPath(round.cyanPath, size.width, size.height)
         val violet = screenPath(round.violetPath, size.width, size.height)
         drawFuturePaths(controller, skin, cyan, violet)
-        drawHazard(round.hazard.center, round.hazard.radius, skin)
+        drawHazard(round.hazard.center, round.hazard.radius, skin, controller.nowNanos)
         drawGem(round.gem.center, round.gem.radius, skin, controller)
         drawPortal(round.cyanPath.end, skin)
         drawGhosts(controller, skin)
         drawPlayer(controller, skin)
-        drawFeedback(controller, skin)
+        if (controller.state == GameState.Playing) drawFeedback(controller, skin)
     }
 }
 
@@ -311,9 +331,14 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFutureBranch(
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHazard(point: GamePoint, radiusValue: Double, skin: GameSkin) {
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHazard(
+    point: GamePoint,
+    radiusValue: Double,
+    skin: GameSkin,
+    nowNanos: Long
+) {
     val center = point.toOffset(size.width, size.height)
-    val time = System.nanoTime() / 1_000_000_000.0
+    val time = nowNanos / 1_000_000_000.0
     val baseRadius = size.minDimension * radiusValue.toFloat()
     val radius = baseRadius * (1f + (sin(time * 8.0) * 0.07).toFloat())
     drawCircle(skin.palette.danger.copy(alpha = 0.045f), radius * 2.25f, center)

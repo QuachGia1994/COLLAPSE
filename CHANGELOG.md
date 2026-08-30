@@ -32,6 +32,10 @@
 - CI now builds the app and Live Activity extension on the GitHub Actions Xcode 27 public-preview runner and uploads `COLLAPSE-iOS-Simulator-Xcode27`.
 
 ### Fixed
+- Android tutorial header now keeps Skip/Close in the same responsive safe-area row as a compact brand mark, and board/card/CTA sizing adapts on compact-height portrait devices instead of overlapping or clipping.
+- Android edge-to-edge system bars now explicitly use light status/navigation icons on the dark COLLAPSE visual language.
+- Android Pause/Game Over now freeze the render clock, hide the gameplay HUD, block canvas input, suppress transient feedback bleed-through, and dim the frozen board so overlay actions are the only visual/interactive foreground.
+- Android Plus now uses Google Play Billing Library 9.1.0 with real weekly/monthly ProductDetails pricing, purchase flow, purchase reconciliation/acknowledgement and restore checks; sideload builds show unavailable state instead of fake BETA prices or entitlements.
 - Tutorial replay now reuses the full three-step procedural gameplay tutorial instead of opening a black text-only pager, with balanced portrait layout and explicit close/next/finish actions.
 - Home, tutorial, Plus, pause, and game-over surfaces now share a procedural COLLAPSE brand mark so the app has a visible identity without adding external image assets.
 - Gameplay now exposes a persistent 44-point Pause control; paused runs provide Resume, Restart, and Home, while game-over provides Restart and Home instead of a dead-end overlay.

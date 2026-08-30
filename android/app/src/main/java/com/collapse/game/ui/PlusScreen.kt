@@ -16,8 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.collapse.game.services.BillingStore
+import com.collapse.game.services.PlaySubscriptionPlan
 
 private val plusBenefits = listOf(
     "▱" to "Tắt quảng cáo",
@@ -37,7 +41,11 @@ private val plusBenefits = listOf(
 )
 
 @Composable
-fun PlusScreen(onClose: () -> Unit) {
+fun PlusScreen(
+    billing: BillingStore,
+    onPurchase: (String) -> Unit,
+    onClose: () -> Unit
+) {
     Box(
         Modifier
             .fillMaxSize()
@@ -54,7 +62,7 @@ fun PlusScreen(onClose: () -> Unit) {
             Spacer(Modifier.height(18.dp))
             Text("COLLAPSE PLUS", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 4.sp)
             Text(
-                "Đăng ký tuần hoặc tháng. Hủy bất kỳ lúc nào trong cửa hàng.",
+                "Đăng ký tuần hoặc tháng. Hủy bất kỳ lúc nào trong Google Play.",
                 modifier = Modifier.padding(top = 8.dp),
                 color = Color.White.copy(alpha = 0.50f),
                 fontSize = 15.sp,
@@ -63,13 +71,17 @@ fun PlusScreen(onClose: () -> Unit) {
             Spacer(Modifier.height(18.dp))
             BenefitsCard()
             Spacer(Modifier.height(18.dp))
-            PlanPlaceholder("HÀNG TUẦN")
+            BillingState(billing)
+            PlanButton(billing.weeklyPlan, billing.isPlusUnlocked, onPurchase)
             Spacer(Modifier.height(10.dp))
-            PlanPlaceholder("HÀNG THÁNG")
+            PlanButton(billing.monthlyPlan, billing.isPlusUnlocked, onPurchase)
+            TextButton(onClick = billing::restore) {
+                Text("KHÔI PHỤC / KIỂM TRA GIAO DỊCH")
+            }
             Text(
-                "Google Play Billing chưa được bật trong beta này. Không có giao dịch giả hoặc entitlement giả.",
-                modifier = Modifier.padding(top = 14.dp),
-                color = CollapseYellow.copy(alpha = 0.78f),
+                billing.statusMessage,
+                modifier = Modifier.padding(top = 4.dp),
+                color = if (billing.isPlusUnlocked) Color(0xFF65F59A) else CollapseYellow.copy(alpha = 0.82f),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center
             )
@@ -86,6 +98,57 @@ fun PlusScreen(onClose: () -> Unit) {
             Text("Đóng")
         }
     }
+}
+
+@Composable
+private fun BillingState(billing: BillingStore) {
+    if (!billing.isConnecting) return
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+        Spacer(Modifier.size(8.dp))
+        Text("Đang kết nối Google Play…", color = Color.White.copy(alpha = 0.58f), fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun PlanButton(
+    plan: PlaySubscriptionPlan?,
+    isPlusUnlocked: Boolean,
+    onPurchase: (String) -> Unit
+) {
+    Button(
+        onClick = { plan?.let { onPurchase(it.productId) } },
+        enabled = plan != null && !isPlusUnlocked,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = CollapseYellow,
+            contentColor = Color.Black,
+            disabledContainerColor = Color.White.copy(alpha = 0.07f),
+            disabledContentColor = Color.White.copy(alpha = 0.55f)
+        )
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(plan?.title ?: "GÓI PLUS", fontWeight = FontWeight.SemiBold)
+            Text(
+                when {
+                    isPlusUnlocked -> "ĐANG HOẠT ĐỘNG"
+                    plan == null -> "KHÔNG KHẢ DỤNG"
+                    else -> "${plan.formattedPrice} / ${periodLabel(plan.billingPeriod)}"
+                }
+            )
+        }
+    }
+}
+
+private fun periodLabel(period: String): String = when (period) {
+    "P1W" -> "tuần"
+    "P1M" -> "tháng"
+    "P1Y" -> "năm"
+    else -> period
 }
 
 @Composable
@@ -121,24 +184,6 @@ private fun BenefitsCard() {
                     Text(label, color = Color.White, fontSize = 16.sp)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PlanPlaceholder(title: String) {
-    Button(
-        onClick = {},
-        enabled = false,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            disabledContainerColor = Color.White.copy(alpha = 0.07f),
-            disabledContentColor = Color.White.copy(alpha = 0.55f)
-        )
-    ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(title, fontWeight = FontWeight.SemiBold)
-            Text("BETA")
         }
     }
 }

@@ -34,7 +34,7 @@ The default animation schedule uses `minimumInterval: 1.0 / 60.0`. `RenderBudget
 - Theme/pulse differences are visual only and never alter hazards, decision timing, scoring, collision, or ranking.
 
 ## Plus
-COLLAPSE Plus is an auto-renewable weekly/monthly subscription. On iOS, StoreKit 2 product IDs are `collapse.plus.weekly` and `collapse.plus.monthly`; entitlement truth comes from verified `Transaction.updates` and current entitlements, including expiration and revocation checks. Android mirrors the paywall, benefits, locked skins, and fairness contract, but intentionally does not fake purchases while Google Play Billing is not yet integrated.
+COLLAPSE Plus is an auto-renewable weekly/monthly subscription. Product IDs are `collapse.plus.weekly` and `collapse.plus.monthly` on both platforms. iOS entitlement truth comes from verified StoreKit 2 `Transaction.updates` and current entitlements. Android uses Google Play Billing Library 9.1.0 to load real localized subscription pricing/offers, launch Play checkout, reconcile/acknowledge purchases, restore via purchase query, and drive Plus-only presentation. Sideload APKs never fabricate prices or entitlements; purchase testing requires configured Play Console products and a Play test track.
 
 Plus removes ads when the ad layer ships, unlocks Plus-only theme/pulse/sound presentation, and grants early access to future levels/modes. Plus never creates a gameplay advantage.
 

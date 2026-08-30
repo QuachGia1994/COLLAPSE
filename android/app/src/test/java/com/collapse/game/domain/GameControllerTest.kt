@@ -54,6 +54,22 @@ class GameControllerTest {
     }
 
     @Test
+    fun pausedTicksDoNotAdvanceRenderClockOrDecision() {
+        val controller = GameController(seed = 5uL)
+        val start = 100_000_000_000L
+        controller.start(start)
+        controller.tick(start + 300_000_000L)
+        controller.pause(start + 400_000_000L)
+        val frozenClock = controller.nowNanos
+
+        controller.tick(start + 20_000_000_000L)
+
+        assertEquals(frozenClock, controller.nowNanos)
+        assertEquals(GameState.Paused, controller.state)
+        assertEquals(GamePhase.Choosing, controller.phase)
+    }
+
+    @Test
     fun pauseResumeAndRestartPreserveExpectedState() {
         val controller = GameController(seed = 21uL)
         controller.start(100_000_000_000L)

@@ -93,8 +93,8 @@ class GameController(
     }
 
     fun tick(frameNanos: Long) {
-        nowNanos = frameNanos
         guardPlaying() ?: return
+        nowNanos = frameNanos
         expireFeedback(frameNanos)
         when (phase) {
             GamePhase.Choosing -> tickChoice(frameNanos)
