@@ -121,9 +121,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLogoNodes(tint:
 }
 
 @Composable
-fun MetricBlock(title: String, value: String, modifier: Modifier = Modifier) {
+fun MetricBlock(title: String, value: String, modifier: Modifier = Modifier, valueSize: Int = 17) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        Text(value, color = Color.White, fontSize = valueSize.sp, fontWeight = FontWeight.SemiBold)
         Text(
             title,
             color = Color.White.copy(alpha = 0.48f),
@@ -138,10 +138,11 @@ fun MetricBlock(title: String, value: String, modifier: Modifier = Modifier) {
 fun GlassSurface(
     modifier: Modifier = Modifier,
     radius: Dp = 28.dp,
+    borderAlpha: Float = 0.12f,
     content: @Composable () -> Unit
 ) {
     Surface(
-        modifier = modifier.border(1.dp, Color.White.copy(alpha = 0.11f), RoundedCornerShape(radius)),
+        modifier = modifier.border(1.dp, Color.White.copy(alpha = borderAlpha), RoundedCornerShape(radius)),
         shape = RoundedCornerShape(radius),
         color = Color.White.copy(alpha = 0.075f),
         content = content

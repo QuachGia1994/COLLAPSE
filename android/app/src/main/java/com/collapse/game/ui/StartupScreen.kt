@@ -35,23 +35,23 @@ fun StartupScreen() {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             Box(
                 Modifier
-                    .size(152.dp)
+                    .size(160.dp)
                     .background(Color.White.copy(alpha = 0.07f), CircleShape)
-                    .border(1.dp, CollapseCyan.copy(alpha = 0.28f), CircleShape),
+                    .border(1.5.dp, CollapseCyan.copy(alpha = 0.24f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                CollapseLogoSymbol(CollapseCyan, Modifier.size(104.dp))
+                CollapseLogoSymbol(CollapseCyan, Modifier.size(112.dp))
             }
             Text(
                 "COLLAPSE",
                 color = Color.White,
-                fontSize = 30.sp,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Light,
-                letterSpacing = 7.sp
+                letterSpacing = 8.sp
             )
             Text(
                 stringResource(R.string.brand_subtitle),
@@ -59,7 +59,7 @@ fun StartupScreen() {
                 color = Color.White.copy(alpha = 0.50f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                letterSpacing = 2.6.sp
+                letterSpacing = 3.sp
             )
         }
     }

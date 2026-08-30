@@ -1,5 +1,7 @@
 package com.collapse.game.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -71,7 +76,6 @@ fun TutorialScreen(
             .background(Brush.verticalGradient(listOf(Color(0xFF07101F), Color.Black)))
     ) {
         val compactHeight = maxHeight < 760.dp
-        val boardHeight = if (compactHeight) 238.dp else 300.dp
         val gap = if (compactHeight) 12.dp else 18.dp
 
         Column(
@@ -80,7 +84,7 @@ fun TutorialScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp, vertical = 12.dp),
+                .padding(horizontal = 20.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TutorialHeader(isReplay, onClose, onFinished)
@@ -88,22 +92,27 @@ fun TutorialScreen(
             TutorialBoard(
                 step = step,
                 selectedBranch = selectedBranch,
-                boardHeight = boardHeight,
                 onTap = {
                     if (step == 1) selectedBranch = selectedBranch.other
                 }
             )
             Spacer(Modifier.height(gap))
-            GlassSurface(Modifier.fillMaxWidth()) {
+            GlassSurface(Modifier.fillMaxWidth(), radius = 24.dp) {
                 Column(
                     Modifier.padding(if (compactHeight) 14.dp else 18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(if (compactHeight) 5.dp else 8.dp)
+                    verticalArrangement = Arrangement.spacedBy(if (compactHeight) 5.dp else 9.dp)
                 ) {
                     Text(item.cue, color = CollapseCyan, fontSize = if (compactHeight) 26.sp else 32.sp)
                     Text("${stringResource(R.string.tutorial_step)} ${step + 1}", color = CollapseCyan, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
                     Text(item.title, color = Color.White, fontSize = if (compactHeight) 21.sp else 24.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Text(item.detail, color = Color.White.copy(alpha = 0.52f), fontSize = if (compactHeight) 13.sp else 15.sp, textAlign = TextAlign.Center)
+                    Text(
+                        item.detail,
+                        color = Color.White.copy(alpha = 0.52f),
+                        fontSize = if (compactHeight) 13.sp else 15.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 330.dp)
+                    )
                 }
             }
             Spacer(Modifier.height(if (compactHeight) 10.dp else 16.dp))
@@ -154,13 +163,13 @@ private fun TutorialHeader(
 
 @Composable
 private fun StepDots(step: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         repeat(3) { index ->
             Box(
                 Modifier
-                    .size(width = if (index == step) 24.dp else 8.dp, height = 8.dp)
+                    .size(width = if (index == step) 26.dp else 7.dp, height = 7.dp)
                     .background(
-                        if (index == step) CollapseCyan else Color.White.copy(alpha = 0.22f),
+                        if (index == step) CollapseCyan else Color.White.copy(alpha = 0.18f),
                         RoundedCornerShape(99.dp)
                     )
             )
@@ -172,26 +181,36 @@ private fun StepDots(step: Int) {
 private fun TutorialBoard(
     step: Int,
     selectedBranch: TimelineBranch,
-    boardHeight: androidx.compose.ui.unit.Dp,
     onTap: () -> Unit
 ) {
+    val cyanAlpha by animateFloatAsState(
+        targetValue = if (selectedBranch == TimelineBranch.Cyan) 0.96f else 0.30f,
+        animationSpec = tween(durationMillis = 220),
+        label = "tutorialCyanAlpha"
+    )
+    val violetAlpha by animateFloatAsState(
+        targetValue = if (selectedBranch == TimelineBranch.Cyan) 0.30f else 0.96f,
+        animationSpec = tween(durationMillis = 220),
+        label = "tutorialVioletAlpha"
+    )
     Box(
         Modifier
             .fillMaxWidth()
-            .height(boardHeight)
-            .background(Color.White.copy(alpha = 0.025f), RoundedCornerShape(28.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(28.dp))
+            .widthIn(max = 390.dp)
+            .aspectRatio(1.08f)
+            .background(Color.White.copy(alpha = 0.025f), RoundedCornerShape(30.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(30.dp))
             .pointerInput(step) { detectTapGestures { onTap() } }
     ) {
-        Canvas(Modifier.fillMaxSize().padding(14.dp)) {
+        Canvas(Modifier.fillMaxSize().padding(12.dp)) {
             val start = Offset(size.width * 0.14f, size.height * 0.52f)
             val end = Offset(size.width * 0.86f, size.height * 0.52f)
             val cyan = tutorialPath(start, Offset(size.width * 0.50f, size.height * 0.20f), end)
             val violet = tutorialPath(start, Offset(size.width * 0.50f, size.height * 0.80f), end)
             drawCircle(Color.White.copy(alpha = 0.025f), radius = size.minDimension * 0.46f, center = center)
             drawCircle(CollapseCyan.copy(alpha = 0.20f), radius = size.minDimension * 0.46f, center = center, style = Stroke(width = 1.5.dp.toPx()))
-            drawTutorialHazard(Offset(size.width * 0.61f, size.height * 0.68f))
-            drawTutorialPaths(step, selectedBranch, cyan, violet, start, end)
+            drawTutorialHazard(Offset(size.width * 0.61f, size.height * 0.68f), size)
+            drawTutorialPaths(step, selectedBranch, cyan, violet, cyanAlpha, violetAlpha)
             drawCircle(if (selectedBranch == TimelineBranch.Cyan) CollapseCyan else Color(0xFFB44CFF), 8.dp.toPx(), start)
             drawCircle(Color(0xFF48EE75), 9.dp.toPx(), end)
         }
@@ -200,10 +219,10 @@ private fun TutorialBoard(
                 "☝",
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .background(Color.White.copy(alpha = 0.10f), RoundedCornerShape(99.dp))
+                    .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(99.dp))
                     .padding(18.dp),
-                color = Color.White,
-                fontSize = 38.sp
+                color = Color.White.copy(alpha = 0.88f),
+                fontSize = 42.sp
             )
         }
     }
@@ -214,19 +233,19 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTutorialPaths(
     selected: TimelineBranch,
     cyan: Path,
     violet: Path,
-    start: Offset,
-    end: Offset
+    cyanAlpha: Float,
+    violetAlpha: Float
 ) {
     val selectedCyan = selected == TimelineBranch.Cyan
     if (step == 2) {
         val chosen = if (selectedCyan) cyan else violet
         drawPath(chosen, if (selectedCyan) CollapseCyan else Color(0xFFB44CFF), style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
-        drawTutorialShards(selectedCyan, start, end)
+        drawTutorialShards(selectedCyan, start = Offset(size.width * 0.14f, size.height * 0.52f), end = Offset(size.width * 0.86f, size.height * 0.52f))
         return
     }
-    val dash = PathEffect.dashPathEffect(floatArrayOf(16f, 12f))
-    drawPath(cyan, CollapseCyan.copy(alpha = if (selectedCyan) 0.96f else 0.30f), style = Stroke(if (selectedCyan) 3.dp.toPx() else 1.5.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash))
-    drawPath(violet, Color(0xFFB44CFF).copy(alpha = if (selectedCyan) 0.30f else 0.96f), style = Stroke(if (selectedCyan) 1.5.dp.toPx() else 3.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash))
+    val dash = PathEffect.dashPathEffect(floatArrayOf(9.dp.toPx(), 8.dp.toPx()))
+    drawPath(cyan, CollapseCyan.copy(alpha = cyanAlpha), style = Stroke(if (selectedCyan) 3.dp.toPx() else 1.5.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash))
+    drawPath(violet, Color(0xFFB44CFF).copy(alpha = violetAlpha), style = Stroke(if (selectedCyan) 1.5.dp.toPx() else 3.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash))
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTutorialShards(
@@ -256,9 +275,10 @@ private fun quadraticPoint(start: Offset, control: Offset, end: Offset, progress
     )
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTutorialHazard(center: Offset) {
-    drawCircle(Color.Red.copy(alpha = 0.09f), 24.dp.toPx(), center)
-    drawCircle(Color.Red, 12.dp.toPx(), center, style = Stroke(width = 2.dp.toPx()))
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTutorialHazard(center: Offset, size: Size) {
+    val minDimension = minOf(size.width, size.height)
+    drawCircle(Color.Red.copy(alpha = 0.10f), minDimension * 0.075f, center)
+    drawCircle(Color.Red, minDimension * 0.038f, center, style = Stroke(width = 2.2.dp.toPx()))
 }
 
 private fun tutorialPath(start: Offset, control: Offset, end: Offset): Path = Path().apply {

@@ -3,6 +3,8 @@ package com.collapse.game.ui
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +18,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -34,12 +38,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -78,18 +85,18 @@ fun HomeScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
             HomeHeader(skin, onTutorial, profile)
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
             HomeOrb(skin)
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
             ModePicker(profile, skin)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             HomeActions(skin, onPlay, onSkins, onPlus, onTutorial)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             HomeMetrics(profile, playGames, skin)
             Spacer(Modifier.height(20.dp))
         }
@@ -99,9 +106,9 @@ fun HomeScreen(
 @Composable
 private fun HomeHeader(skin: GameSkin, onTutorial: () -> Unit, profile: PlayerProfile) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().widthIn(max = 380.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         CollapseBrandMark(
             tint = skin.palette.primary,
@@ -109,11 +116,23 @@ private fun HomeHeader(skin: GameSkin, onTutorial: () -> Unit, profile: PlayerPr
             compact = true,
             modifier = Modifier.weight(1f)
         )
-        OutlinedButton(onClick = onTutorial, shape = RoundedCornerShape(99.dp)) {
-            Text("?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        }
+        HeaderGlassButton(onTutorial, "?", Color.White, contentDescription = stringResource(R.string.home_tutorial))
         AudioMenu(profile, skin)
         LanguageMenu(skin)
+    }
+}
+
+@Composable
+private fun HeaderGlassButton(onClick: () -> Unit, glyph: String, tint: Color, contentDescription: String) {
+    Box(
+        modifier = Modifier
+            .size(42.dp)
+            .background(Color.White.copy(alpha = 0.08f), CircleShape)
+            .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(glyph, color = tint, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -121,7 +140,14 @@ private fun HomeHeader(skin: GameSkin, onTutorial: () -> Unit, profile: PlayerPr
 private fun AudioMenu(profile: PlayerProfile, skin: GameSkin) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        OutlinedButton(onClick = { expanded = true }, shape = RoundedCornerShape(99.dp)) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
+                .clickable { expanded = true },
+            contentAlignment = Alignment.Center
+        ) {
             Text("♪", color = skin.palette.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -165,8 +191,15 @@ private fun LanguageMenu(skin: GameSkin) {
     }
 
     Box {
-        OutlinedButton(onClick = { expanded = true }, shape = RoundedCornerShape(99.dp)) {
-            Text("◎ $currentLabel", color = skin.palette.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
+                .clickable { expanded = true },
+            contentAlignment = Alignment.Center
+        ) {
+            Text("◎ $currentLabel", color = skin.palette.primary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             LanguageOption("English", "en") { expanded = false }
@@ -190,8 +223,8 @@ private fun LanguageOption(label: String, tag: String, onDone: () -> Unit) {
 
 @Composable
 private fun ModePicker(profile: PlayerProfile, skin: GameSkin) {
-    GlassSurface(modifier = Modifier.fillMaxWidth(), radius = 24.dp) {
-        Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    GlassSurface(modifier = Modifier.fillMaxWidth().widthIn(max = 380.dp), radius = 22.dp) {
+        Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(
                 "${stringResource(R.string.home_mode)} · ${profile.selectedMode.title}",
                 color = Color.White,
@@ -232,8 +265,8 @@ private fun HomeActions(
     onPlus: () -> Unit,
     onTutorial: () -> Unit
 ) {
-    GlassSurface(modifier = Modifier.fillMaxWidth(), radius = 26.dp) {
-        Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+    GlassSurface(modifier = Modifier.fillMaxWidth().widthIn(max = 380.dp), radius = 22.dp) {
+        Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(
                 onClick = onPlay,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -267,7 +300,7 @@ private fun HomeMetrics(profile: PlayerProfile, playGames: PlayGamesStore, skin:
     val mode = profile.selectedMode
     val scope = rememberCoroutineScope()
 
-    GlassSurface(modifier = Modifier.fillMaxWidth(), radius = 24.dp) {
+    GlassSurface(modifier = Modifier.fillMaxWidth().widthIn(max = 380.dp), radius = 22.dp) {
         Column(Modifier.padding(horizontal = 13.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -336,27 +369,30 @@ private fun RankBadge(
 
 @Composable
 private fun HomeOrb(skin: GameSkin) {
-    Canvas(Modifier.size(216.dp)) {
+    Canvas(Modifier.size(214.dp)) {
         val center = Offset(size.width / 2f, size.height / 2f)
         val radius = size.minDimension * 0.46f
         drawCircle(Color.White.copy(alpha = 0.07f), radius, center)
         drawCircle(skin.palette.primary.copy(alpha = 0.34f), radius, center, style = Stroke(width = 2.dp.toPx()))
-        drawOrbPath(skin.palette.primary, upper = true)
-        drawOrbPath(skin.palette.secondary, upper = false)
+        drawOrbCapsule(skin.palette.primary, rotationDegrees = -17f)
+        drawOrbCapsule(skin.palette.secondary, rotationDegrees = 20f)
         drawCircle(skin.palette.primary, 8.dp.toPx(), Offset(size.width * 0.12f, size.height * 0.52f))
         drawCircle(skin.palette.safe, 8.5.dp.toPx(), Offset(size.width * 0.88f, size.height * 0.28f))
         drawCircle(skin.palette.danger, 11.dp.toPx(), Offset(size.width * 0.78f, size.height * 0.76f), style = Stroke(width = 3.dp.toPx()))
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOrbPath(color: Color, upper: Boolean) {
-    val path = Path()
-    val startY = if (upper) 0.66f else 0.44f
-    val endY = if (upper) 0.40f else 0.68f
-    val controlY = if (upper) 0.52f else 0.54f
-    path.moveTo(size.width * 0.28f, size.height * startY)
-    path.quadraticBezierTo(size.width * 0.50f, size.height * controlY, size.width * 0.78f, size.height * endY)
-    drawPath(path, color, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOrbCapsule(color: Color, rotationDegrees: Float) {
+    rotate(degrees = rotationDegrees, pivot = center) {
+        val capsuleWidth = 150.dp.toPx()
+        val capsuleHeight = 3.dp.toPx()
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(center.x - capsuleWidth / 2f, center.y - capsuleHeight / 2f),
+            size = Size(capsuleWidth, capsuleHeight),
+            cornerRadius = CornerRadius(capsuleHeight / 2f)
+        )
+    }
 }
 
 @Composable

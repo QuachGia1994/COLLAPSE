@@ -1,6 +1,8 @@
 package com.collapse.game.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,12 +57,12 @@ fun PlusScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp, vertical = 12.dp),
+                .padding(22.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PlusOrb()
-            Spacer(Modifier.height(18.dp))
-            Text("COLLAPSE PLUS", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 4.sp)
+            Spacer(Modifier.height(22.dp))
+            Text("COLLAPSE PLUS", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
             Text(
                 stringResource(R.string.plus_description),
                 modifier = Modifier.padding(top = 8.dp),
@@ -67,13 +70,14 @@ fun PlusScreen(
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(22.dp))
             BenefitsCard()
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(22.dp))
             BillingState(billing)
             PlanButton(billing.weeklyPlan, billing.isPlusUnlocked, onPurchase)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             PlanButton(billing.monthlyPlan, billing.isPlusUnlocked, onPurchase)
+            Spacer(Modifier.height(12.dp))
             TextButton(onClick = billing::restore) {
                 Text(stringResource(R.string.plus_restore))
             }
@@ -86,7 +90,7 @@ fun PlusScreen(
             )
             Text(
                 stringResource(R.string.plus_fairness),
-                modifier = Modifier.padding(top = 18.dp),
+                modifier = Modifier.padding(top = 22.dp),
                 color = Color.White.copy(alpha = 0.48f),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center
@@ -139,25 +143,37 @@ private fun PlanButton(
     isPlusUnlocked: Boolean,
     onPurchase: (String) -> Unit
 ) {
-    Button(
-        onClick = { plan?.let { onPurchase(it.productId) } },
-        enabled = plan != null && !isPlusUnlocked,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = CollapseYellow,
-            contentColor = Color.Black,
-            disabledContainerColor = Color.White.copy(alpha = 0.07f),
-            disabledContentColor = Color.White.copy(alpha = 0.55f)
-        )
+    val enabled = plan != null && !isPlusUnlocked
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+            .clickable(enabled = enabled) { plan?.let { onPurchase(it.productId) } }
+            .padding(16.dp)
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(planTitle(plan), fontWeight = FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(planTitle(plan), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                Text(
+                    when {
+                        isPlusUnlocked -> stringResource(R.string.plus_active)
+                        plan == null -> stringResource(R.string.plus_unavailable)
+                        else -> periodLabel(plan.billingPeriod)
+                    },
+                    color = Color.White.copy(alpha = 0.50f),
+                    fontSize = 12.sp
+                )
+            }
             Text(
                 when {
-                    isPlusUnlocked -> stringResource(R.string.plus_active)
-                    plan == null -> stringResource(R.string.plus_unavailable)
-                    else -> "${plan.formattedPrice} / ${periodLabel(plan.billingPeriod)}"
-                }
+                    isPlusUnlocked -> "✓"
+                    plan == null -> "—"
+                    else -> plan.formattedPrice
+                },
+                color = if (isPlusUnlocked) Color(0xFF65F59A) else Color.White,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 17.sp
             )
         }
     }
@@ -180,23 +196,30 @@ private fun periodLabel(period: String): String = when (period) {
 
 @Composable
 private fun PlusOrb() {
-    Box(
-        Modifier
-            .size(196.dp)
-            .background(Color.White.copy(alpha = 0.09f), CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(contentAlignment = Alignment.Center) {
         Box(
             Modifier
-                .size(184.dp)
-                .background(
-                    Brush.radialGradient(listOf(Color(0xFF36C8EE).copy(alpha = 0.35f), Color(0xFF9B42B9).copy(alpha = 0.25f), Color.Transparent)),
-                    CircleShape
-                ),
+                .size(204.dp)
+                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape)
+        )
+        Box(
+            Modifier
+                .size(190.dp)
+                .background(Color.White.copy(alpha = 0.09f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            CollapseLogoSymbol(CollapseYellow, Modifier.size(92.dp))
-            Text("+", modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp), color = CollapseYellow, fontSize = 32.sp)
+            Box(
+                Modifier
+                    .size(184.dp)
+                    .background(
+                        Brush.radialGradient(listOf(Color(0xFF36C8EE).copy(alpha = 0.35f), Color(0xFF9B42B9).copy(alpha = 0.25f), Color.Transparent)),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                CollapseLogoSymbol(CollapseYellow, Modifier.size(92.dp))
+                Text("+", modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp), color = CollapseYellow, fontSize = 32.sp)
+            }
         }
     }
 }
@@ -210,12 +233,12 @@ private fun BenefitsCard() {
         "▥" to stringResource(R.string.plus_sound),
         "⬢" to stringResource(R.string.plus_fair)
     )
-    GlassSurface(Modifier.fillMaxWidth()) {
+    GlassSurface(Modifier.fillMaxWidth(), radius = 24.dp, borderAlpha = 0.10f) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
             plusBenefits.forEach { (icon, label) ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(icon, color = CollapseYellow, fontSize = 20.sp, modifier = Modifier.size(32.dp))
-                    Text(label, color = Color.White, fontSize = 16.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                    Text(icon, color = CollapseYellow, fontSize = 18.sp, modifier = Modifier.size(24.dp))
+                    Text(label, color = Color.White, fontSize = 15.sp)
                 }
             }
         }

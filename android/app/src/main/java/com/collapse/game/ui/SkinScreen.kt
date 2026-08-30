@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,19 +62,28 @@ fun SkinScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 18.dp, vertical = 12.dp)
+                .padding(18.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 CollapseBrandMark(palette.primary, subtitle = stringResource(R.string.skin_title), compact = true, modifier = Modifier.weight(1f))
                 OutlinedButton(onClick = onBack) { Text(stringResource(R.string.skin_back)) }
             }
-            SkinPreview(preview, Modifier.fillMaxWidth().height(230.dp).padding(vertical = 14.dp))
-            Text("◆ ${profile.gemBalance} ${stringResource(R.string.skin_gem)}", color = Color.White.copy(alpha = 0.68f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 10.dp))
+            SkinPreview(preview, Modifier.fillMaxWidth().height(260.dp).padding(vertical = 14.dp))
+            Text(
+                "◆ ${profile.gemBalance} ${stringResource(R.string.skin_gem)}",
+                color = Color.White.copy(alpha = 0.68f),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .padding(bottom = 10.dp)
+                    .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(99.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            )
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(GameSkin.entries) { skin ->
                     SkinCard(
@@ -150,26 +160,31 @@ private fun SkinPreview(skin: GameSkin, modifier: Modifier) {
         Canvas(Modifier.size(190.dp)) {
             drawCircle(palette.primary.copy(alpha = 0.10f), size.minDimension * 0.48f)
             drawCircle(palette.primary.copy(alpha = 0.65f), size.minDimension * 0.46f, style = Stroke(width = 2.dp.toPx()))
-            val upper = Path().apply {
-                moveTo(size.width * 0.20f, size.height * 0.58f)
-                quadraticBezierTo(size.width * 0.50f, size.height * 0.32f, size.width * 0.80f, size.height * 0.42f)
-            }
-            val lower = Path().apply {
-                moveTo(size.width * 0.20f, size.height * 0.42f)
-                quadraticBezierTo(size.width * 0.50f, size.height * 0.70f, size.width * 0.80f, size.height * 0.60f)
-            }
-            drawPath(upper, palette.primary, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
-            drawPath(lower, palette.secondary, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
-            drawCircle(palette.safe, 8.dp.toPx(), Offset(size.width * 0.82f, size.height * 0.38f))
-            drawCircle(palette.danger, 10.dp.toPx(), Offset(size.width * 0.76f, size.height * 0.68f), style = Stroke(3.dp.toPx()))
+            drawPreviewCapsule(palette.primary, rotationDegrees = -14f)
+            drawPreviewCapsule(palette.secondary, rotationDegrees = 14f)
+            drawCircle(palette.safe, 8.5.dp.toPx(), Offset(center.x + 72.dp.toPx(), center.y))
+            drawCircle(palette.danger, 11.dp.toPx(), Offset(center.x + 48.dp.toPx(), center.y + 49.dp.toPx()), style = Stroke(3.dp.toPx()))
         }
         Text(
             skin.title.uppercase(),
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
-            color = Color.White.copy(alpha = 0.84f),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+            color = Color.White.copy(alpha = 0.85f),
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = 2.sp
+            letterSpacing = 3.sp
+        )
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPreviewCapsule(color: Color, rotationDegrees: Float) {
+    rotate(degrees = rotationDegrees, pivot = center) {
+        val capsuleWidth = 110.dp.toPx()
+        val capsuleHeight = 3.dp.toPx()
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(center.x - capsuleWidth / 2f, center.y - capsuleHeight / 2f),
+            size = androidx.compose.ui.geometry.Size(capsuleWidth, capsuleHeight),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(capsuleHeight / 2f)
         )
     }
 }
@@ -182,19 +197,23 @@ private fun SkinCard(
     onClick: () -> Unit
 ) {
     val palette = skin.palette
+    val borderColor = if (selected) palette.primary.copy(alpha = 0.70f) else Color.White.copy(alpha = 0.08f)
+    val borderWidth = if (selected) 1.5.dp else 1.dp
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(borderWidth, borderColor, RoundedCornerShape(24.dp)),
         colors = ButtonDefaults.buttonColors(containerColor = if (selected) palette.primary.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f)),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         contentPadding = ButtonDefaults.ContentPadding
     ) {
-        Column(Modifier.padding(vertical = 8.dp), horizontalAlignment = Alignment.Start) {
-            Box(Modifier.fillMaxWidth().height(82.dp)) {
+        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.fillMaxWidth().height(128.dp)) {
                 Canvas(Modifier.fillMaxSize()) {
-                    drawCircle(palette.primary.copy(alpha = 0.72f), 34.dp.toPx(), center, style = Stroke(2.dp.toPx()))
-                    drawCircle(palette.primary, 5.dp.toPx(), Offset(center.x - 24.dp.toPx(), center.y))
-                    drawCircle(palette.safe, 5.dp.toPx(), Offset(center.x + 24.dp.toPx(), center.y - 12.dp.toPx()))
+                    drawCircle(palette.primary.copy(alpha = 0.72f), 44.dp.toPx(), center, style = Stroke(2.dp.toPx()))
+                    drawCircle(palette.primary, 4.5.dp.toPx(), Offset(center.x - 28.dp.toPx(), center.y))
+                    drawCircle(palette.safe, 4.5.dp.toPx(), Offset(center.x + 28.dp.toPx(), center.y))
                 }
                 if (!unlocked) {
                     Text(
@@ -204,9 +223,9 @@ private fun SkinCard(
                     )
                 }
             }
-            Text(skin.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            Text(stringResource(skinDetailResource(skin)), color = Color.White.copy(alpha = 0.48f), fontSize = 11.sp)
-            Text(accessLabel(skin, unlocked), color = if (unlocked) palette.safe else CollapseYellow, fontSize = 10.sp, textAlign = TextAlign.Start)
+            Text(skin.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            Text(stringResource(skinDetailResource(skin)), color = Color.White.copy(alpha = 0.48f), fontSize = 12.sp)
+            Text(accessLabel(skin, unlocked), color = if (unlocked) palette.safe else CollapseYellow, fontSize = 11.sp, textAlign = TextAlign.Start)
         }
     }
 }

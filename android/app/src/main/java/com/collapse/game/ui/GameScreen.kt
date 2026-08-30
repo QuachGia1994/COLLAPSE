@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -44,6 +46,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -125,11 +128,18 @@ fun GameScreen(
     }
 
     val overlayActive = controller.state != GameState.Playing
+    val backdropRadius = with(LocalDensity.current) { 620.dp.toPx() }
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.radialGradient(listOf(skin.palette.backgroundTop, skin.palette.backgroundBottom)))
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(skin.palette.backgroundTop, skin.palette.backgroundBottom),
+                    radius = backdropRadius
+                )
+            )
     ) {
+        AmbientGameGlass(skin.palette)
         GameCanvas(
             controller = controller,
             skin = skin,
@@ -173,56 +183,99 @@ fun GameScreen(
 }
 
 @Composable
+private fun AmbientGameGlass(palette: SkinPalette) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(330.dp)
+                .background(Color.White.copy(alpha = 0.028f), CircleShape)
+        )
+        Box(
+            Modifier
+                .size(260.dp)
+                .background(Color.White.copy(alpha = 0.014f), CircleShape)
+        )
+        Box(
+            Modifier
+                .size(332.dp)
+                .border(1.dp, palette.primary.copy(alpha = 0.18f), CircleShape)
+        )
+    }
+}
+
+@Composable
 private fun GameHud(controller: GameController, profile: PlayerProfile, skin: GameSkin) {
     Column(
         Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         GlassSurface(Modifier.fillMaxWidth(), radius = 24.dp) {
             Row(
                 Modifier.fillMaxWidth().padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     CollapseBrandMark(skin.palette.primary, subtitle = "", compact = true)
                     Text(controller.mode.title, color = Color.White.copy(alpha = 0.48f), fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
                     Text("◉ ${stringResource(R.string.game_forecast)} ${"%.1f".format(controller.choiceDurationSeconds)}s", color = skin.palette.primary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp)
-                    Text("🔥 ${profile.dailyRunStreak}  ·  ◆ ${profile.gemBalance + controller.economy.gems}", color = Color.White.copy(alpha = 0.62f), fontSize = 10.sp)
+                    Text("🔥 ${profile.dailyRunStreak}  ·  ◆ ${profile.gemBalance + controller.economy.gems}", color = Color.White.copy(alpha = 0.64f), fontSize = 10.sp)
                 }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(min = 54.dp)) {
                     Text(controller.score.toString(), color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.game_score), color = Color.White.copy(alpha = 0.46f), fontSize = 9.sp, letterSpacing = 1.6.sp)
                 }
                 Spacer(Modifier.size(8.dp))
-                IconButton(
-                    onClick = controller::pause,
-                    enabled = controller.state == GameState.Playing && controller.phase != GamePhase.Ready,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
-                        .alpha(if (controller.phase == GamePhase.Ready) 0f else 1f)
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(width = 3.dp, height = 15.dp).background(skin.palette.primary, RoundedCornerShape(2.dp)))
-                        Box(Modifier.size(width = 3.dp, height = 15.dp).background(skin.palette.primary, RoundedCornerShape(2.dp)))
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .alpha(if (controller.phase == GamePhase.Ready) 0f else 1f)
+                            .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                            .border(1.dp, Color.White.copy(alpha = 0.24f), CircleShape)
+                            .clickable(
+                                enabled = controller.state == GameState.Playing && controller.phase != GamePhase.Ready,
+                                onClick = controller::pause
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Box(Modifier.size(width = 3.dp, height = 15.dp).background(skin.palette.primary, RoundedCornerShape(2.dp)))
+                            Box(Modifier.size(width = 3.dp, height = 15.dp).background(skin.palette.primary, RoundedCornerShape(2.dp)))
+                        }
                     }
                 }
             }
         }
         Spacer(Modifier.weight(1f))
         if (controller.phase == GamePhase.Choosing && controller.state == GameState.Playing) {
-            GlassSurface(Modifier.align(Alignment.CenterHorizontally), radius = 99.dp) {
-                Text(
-                    "●  ${stringResource(R.string.game_tap)}",
+            GlassSurface(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp), radius = 99.dp) {
+                Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    color = if (controller.guidanceQuality > 0.5) Color(0xFF62F58D) else Color(0xFFFF5D67),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.2.sp
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .background(
+                                if (controller.guidanceQuality > 0.5) Color(0xFF62F58D) else Color(0xFFFF5D67),
+                                CircleShape
+                            )
+                    )
+                    Text(
+                        stringResource(R.string.game_tap),
+                        color = Color.White.copy(alpha = 0.82f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.3.sp
+                    )
+                }
             }
         }
     }
@@ -235,7 +288,7 @@ private fun CountdownOverlay(controller: GameController, skin: GameSkin) {
             Modifier
                 .size(118.dp)
                 .background(Color.White.copy(alpha = 0.08f), CircleShape)
-                .border(1.dp, skin.palette.primary.copy(alpha = 0.34f), CircleShape),
+                .border(1.5.dp, skin.palette.primary.copy(alpha = 0.32f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -256,11 +309,11 @@ private fun PauseOverlay(
     onHome: () -> Unit
 ) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        GlassSurface(modifier = Modifier.fillMaxWidth(0.88f), radius = 28.dp) {
+        GlassSurface(modifier = Modifier.fillMaxWidth(0.88f).widthIn(max = 340.dp), radius = 28.dp) {
             Column(
                 Modifier.padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 CollapseBrandMark(skin.palette.primary, subtitle = stringResource(R.string.game_pause_title), compact = true)
                 Button(onClick = onResume, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = skin.palette.primary)) {
@@ -284,18 +337,18 @@ private fun GameOverOverlay(
     onHome: () -> Unit
 ) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        GlassSurface(Modifier.fillMaxWidth(0.91f), radius = 28.dp) {
+        GlassSurface(Modifier.fillMaxWidth(0.91f).widthIn(max = 360.dp), radius = 28.dp) {
             Column(
                 Modifier.padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(13.dp)
+                verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
                 CollapseBrandMark(skin.palette.danger, subtitle = stringResource(R.string.game_over_title), compact = true)
                 Text(stringResource(R.string.game_over_message), color = Color.White.copy(alpha = 0.56f), textAlign = TextAlign.Center, fontSize = 14.sp)
-                Row(Modifier.fillMaxWidth()) {
-                    MetricBlock(stringResource(R.string.game_score), controller.score.toString(), Modifier.weight(1f))
-                    MetricBlock(stringResource(R.string.game_gem), "+${controller.economy.gems}", Modifier.weight(1f))
-                    MetricBlock(stringResource(R.string.game_best), maxOf(profile.bestScore(controller.mode), controller.score).toString(), Modifier.weight(1f))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    MetricBlock(stringResource(R.string.game_score), controller.score.toString(), Modifier.weight(1f), valueSize = 20)
+                    MetricBlock(stringResource(R.string.game_gem), "+${controller.economy.gems}", Modifier.weight(1f), valueSize = 20)
+                    MetricBlock(stringResource(R.string.game_best), maxOf(profile.bestScore(controller.mode), controller.score).toString(), Modifier.weight(1f), valueSize = 20)
                 }
                 Button(onClick = onRestart, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = skin.palette.primary)) {
                     Text(stringResource(R.string.game_restart), color = Color.Black)
@@ -311,7 +364,7 @@ private fun OverlayShade() {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.80f))
+            .background(Color.Black.copy(alpha = 0.42f))
             .pointerInput(Unit) { detectTapGestures { } }
     )
 }
@@ -392,7 +445,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHazard(
     for (index in 0 until 8) {
         val angle = index / 8.0 * PI * 2.0
         val inner = Offset(center.x + (cos(angle) * radius * 0.72).toFloat(), center.y + (sin(angle) * radius * 0.72).toFloat())
-        val outer = Offset(center.x + (cos(angle) * radius * 0.965).toFloat(), center.y + (sin(angle) * radius * 0.965).toFloat())
+        val outer = Offset(center.x + (cos(angle) * radius * 1.34).toFloat(), center.y + (sin(angle) * radius * 1.34).toFloat())
         drawLine(skin.palette.danger.copy(alpha = 0.88f), inner, outer, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
     }
 }
@@ -416,8 +469,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGem(point: Game
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPortal(point: GamePoint, skin: GameSkin) {
     val center = point.toOffset(size.width, size.height)
-    drawCircle(skin.palette.safe.copy(alpha = 0.17f), 22f, center)
-    drawCircle(skin.palette.safe, 10f, center, style = Stroke(width = 3f))
+    drawCircle(skin.palette.safe.copy(alpha = 0.0432f), 21.7.dp.toPx(), center)
+    drawCircle(skin.palette.safe.copy(alpha = 0.12f), 14.dp.toPx(), center)
+    drawCircle(skin.palette.safe.copy(alpha = 0.90f), 10.dp.toPx(), center, style = Stroke(width = 2.2.dp.toPx()))
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhosts(controller: GameController, skin: GameSkin) {
@@ -450,12 +504,13 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPlayer(controll
     val remaining = controller.choiceRemaining().toFloat()
     drawArc(
         color = if (remaining < 0.28f) skin.palette.danger else skin.palette.primary,
+        alpha = 0.95f,
         startAngle = -90f,
         sweepAngle = 360f * remaining,
         useCenter = false,
-        topLeft = Offset(center.x - 26f, center.y - 26f),
-        size = Size(52f, 52f),
-        style = Stroke(width = 4f, cap = StrokeCap.Round)
+        topLeft = Offset(center.x - 19.dp.toPx(), center.y - 19.dp.toPx()),
+        size = Size(38.dp.toPx(), 38.dp.toPx()),
+        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
     )
 }
 
@@ -465,7 +520,12 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFeedback(contro
     val color = if (feedback.kind == FeedbackKind.Gem) skin.palette.safe else skin.palette.danger
     val point = if (feedback.kind == FeedbackKind.Gem) controller.round.gem.center else controller.round.hazard.center
     val center = point.toOffset(size.width, size.height)
-    drawCircle(color.copy(alpha = (1f - progress) * 0.55f), 18f + 34f * progress, center, style = Stroke(width = 3f))
+    drawCircle(
+        color.copy(alpha = 1f - progress),
+        12.dp.toPx() + 42.dp.toPx() * progress,
+        center,
+        style = Stroke(width = 3.dp.toPx() * (1f - progress) + 0.5.dp.toPx())
+    )
 }
 
 private fun screenPath(path: FuturePath, width: Float, height: Float): Path = Path().apply {
