@@ -19,6 +19,10 @@
     <string name="home_rank_zen">ZEN · LOCAL</string>
     <string name="home_rank_connect">KẾT NỐI</string>
     <string name="home_language">NGÔN NGỮ</string>
+    <string name="home_settings">ÂM THANH</string>
+    <string name="settings_music">NHẠC</string>
+    <string name="settings_sound">ÂM THANH</string>
+    <string name="settings_haptics">RUNG</string>
     <string name="mode_classic_detail">Nhịp cân bằng nguyên bản.</string>
     <string name="mode_rush_detail">Quyết định nhanh, chuyển động nhanh.</string>
     <string name="mode_precision_detail">Chỉ một lần đổi nhánh mỗi round.</string>

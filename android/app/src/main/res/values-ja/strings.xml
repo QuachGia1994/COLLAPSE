@@ -19,6 +19,10 @@
     <string name="home_rank_zen">ZEN · ローカル</string>
     <string name="home_rank_connect">接続</string>
     <string name="home_language">言語</string>
+    <string name="home_settings">サウンド</string>
+    <string name="settings_music">音楽</string>
+    <string name="settings_sound">効果音</string>
+    <string name="settings_haptics">振動</string>
     <string name="mode_classic_detail">バランスの取れた基本リズム。</string>
     <string name="mode_rush_detail">判断時間と移動がより速い。</string>
     <string name="mode_precision_detail">各ラウンドで分岐変更は1回だけ。</string>

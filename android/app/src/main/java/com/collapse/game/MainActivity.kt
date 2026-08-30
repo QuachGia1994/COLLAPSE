@@ -69,6 +69,13 @@ private fun CollapseApp(activity: Activity) {
     var tutorialReplay by remember { mutableStateOf(false) }
     var showsStartup by remember { mutableStateOf(true) }
 
+    sensory.soundEnabled = profile.soundEnabled
+    sensory.hapticsEnabled = profile.hapticsEnabled
+
+    LaunchedEffect(profile.musicEnabled) {
+        if (profile.musicEnabled) music.play() else music.pause()
+    }
+
     LaunchedEffect(Unit) {
         playGames.retryPending()
         playGames.refresh(profile.selectedMode)
@@ -81,14 +88,14 @@ private fun CollapseApp(activity: Activity) {
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     billing.refresh()
-                    music.play()
+                    if (profile.musicEnabled) music.play() else music.pause()
                 }
                 Lifecycle.Event.ON_PAUSE -> music.pause()
                 else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) music.play()
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && profile.musicEnabled) music.play()
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             music.close()

@@ -19,6 +19,10 @@
     <string name="home_rank_zen">ZEN · LOCAL</string>
     <string name="home_rank_connect">CONNECT</string>
     <string name="home_language">LANGUAGE</string>
+    <string name="home_settings">AUDIO</string>
+    <string name="settings_music">MUSIC</string>
+    <string name="settings_sound">SOUND</string>
+    <string name="settings_haptics">HAPTICS</string>
     <string name="mode_classic_detail">Balanced original rhythm.</string>
     <string name="mode_rush_detail">Faster decisions and faster travel.</string>
     <string name="mode_precision_detail">Only one branch switch each round.</string>

@@ -25,6 +25,12 @@ class PlayerProfile(context: Context) {
         private set
     var unlockedSkinIds by mutableStateOf(preferences.getStringSet(KEY_UNLOCKED, emptySet())?.toSet() ?: emptySet())
         private set
+    var musicEnabled by mutableStateOf(preferences.getBoolean(KEY_MUSIC, true))
+        private set
+    var soundEnabled by mutableStateOf(preferences.getBoolean(KEY_SOUND, true))
+        private set
+    var hapticsEnabled by mutableStateOf(preferences.getBoolean(KEY_HAPTICS, true))
+        private set
 
     val bestScore: Int
         get() = bestScore(selectedMode)
@@ -43,6 +49,21 @@ class PlayerProfile(context: Context) {
     fun selectMode(mode: GameMode) {
         selectedMode = mode
         preferences.edit().putString(KEY_MODE, mode.name).apply()
+    }
+
+    fun setMusicEnabled(enabled: Boolean) {
+        musicEnabled = enabled
+        preferences.edit().putBoolean(KEY_MUSIC, enabled).apply()
+    }
+
+    fun setSoundEnabled(enabled: Boolean) {
+        soundEnabled = enabled
+        preferences.edit().putBoolean(KEY_SOUND, enabled).apply()
+    }
+
+    fun setHapticsEnabled(enabled: Boolean) {
+        hapticsEnabled = enabled
+        preferences.edit().putBoolean(KEY_HAPTICS, enabled).apply()
     }
 
     fun registerRunStart(today: LocalDate = LocalDate.now()) {
@@ -159,5 +180,8 @@ class PlayerProfile(context: Context) {
         const val KEY_SKIN = "skin.selected"
         const val KEY_UNLOCKED = "skin.unlocked"
         const val KEY_MODE = "mode.selected"
+        const val KEY_MUSIC = "audio.music"
+        const val KEY_SOUND = "audio.sound"
+        const val KEY_HAPTICS = "audio.haptics"
     }
 }

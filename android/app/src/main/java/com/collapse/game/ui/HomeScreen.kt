@@ -82,7 +82,7 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            HomeHeader(skin, onTutorial)
+            HomeHeader(skin, onTutorial, profile)
             Spacer(Modifier.height(14.dp))
             HomeOrb(skin)
             Spacer(Modifier.height(14.dp))
@@ -97,7 +97,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(skin: GameSkin, onTutorial: () -> Unit) {
+private fun HomeHeader(skin: GameSkin, onTutorial: () -> Unit, profile: PlayerProfile) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -112,8 +112,44 @@ private fun HomeHeader(skin: GameSkin, onTutorial: () -> Unit) {
         OutlinedButton(onClick = onTutorial, shape = RoundedCornerShape(99.dp)) {
             Text("?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
+        AudioMenu(profile, skin)
         LanguageMenu(skin)
     }
+}
+
+@Composable
+private fun AudioMenu(profile: PlayerProfile, skin: GameSkin) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }, shape = RoundedCornerShape(99.dp)) {
+            Text("♪", color = skin.palette.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            AudioToggle(stringResource(R.string.settings_music), profile.musicEnabled) {
+                profile.setMusicEnabled(it)
+            }
+            AudioToggle(stringResource(R.string.settings_sound), profile.soundEnabled) {
+                profile.setSoundEnabled(it)
+            }
+            AudioToggle(stringResource(R.string.settings_haptics), profile.hapticsEnabled) {
+                profile.setHapticsEnabled(it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AudioToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                if (checked) "✓ $label" else label,
+                color = if (checked) Color.White else Color.White.copy(alpha = 0.62f),
+                fontSize = 14.sp
+            )
+        },
+        onClick = { onChange(!checked) }
+    )
 }
 
 @Composable
