@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Artwork scaled 0.72x around the center so the 80dp ring shrinks to
+         57.6dp and stays inside the 66dp adaptive-icon safe zone. -->
+    <group
+        android:scaleX="0.72"
+        android:scaleY="0.72"
+        android:pivotX="54"
+        android:pivotY="54">
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M54,14A40,40 0,1 0,54,94A40,40 0,1 0,54,14"
+            android:strokeColor="#36CBF2"
+            android:strokeWidth="2.2" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M26,64Q54,34 82,46"
+            android:strokeColor="#36CBF2"
+            android:strokeLineCap="round"
+            android:strokeWidth="4" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M26,44Q54,74 82,62"
+            android:strokeColor="#B44CFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="4" />
+        <path android:fillColor="#36CBF2" android:pathData="M25,54A5,5 0,1 0,25,64A5,5 0,1 0,25,54" />
+        <path android:fillColor="#4DFF8D" android:pathData="M80,36A5,5 0,1 0,80,46A5,5 0,1 0,80,36" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M78,68A7,7 0,1 0,78,82A7,7 0,1 0,78,68"
+            android:strokeColor="#FF4C57"
+            android:strokeWidth="3" />
+    </group>
+</vector>
