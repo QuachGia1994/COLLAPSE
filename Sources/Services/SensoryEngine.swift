@@ -45,6 +45,8 @@ final class SensoryEngine {
     private(set) var supportsHaptics = false
     private(set) var isAudioRunning = false
     private(set) var lastError: SensoryError?
+    var soundEnabled = true
+    var hapticsEnabled = true
 
     init() {
         configureAudioGraph()
@@ -88,9 +90,13 @@ final class SensoryEngine {
     }
 
     private func beginGuidance(quality: Double) {
-        startAudioIfNeeded()
-        startGuidanceAudio()
-        startGuidanceHaptic()
+        if soundEnabled {
+            startAudioIfNeeded()
+            startGuidanceAudio()
+        }
+        if hapticsEnabled {
+            startGuidanceHaptic()
+        }
         updateGuidance(quality: quality)
     }
 
@@ -160,9 +166,13 @@ final class SensoryEngine {
 
     private func playEvent(_ event: SensoryEvent) {
         stopGuidance()
-        startAudioIfNeeded()
-        playAudioEvent(event)
-        playHapticEvent(event)
+        if soundEnabled {
+            startAudioIfNeeded()
+            playAudioEvent(event)
+        }
+        if hapticsEnabled {
+            playHapticEvent(event)
+        }
     }
 
     private func playAudioEvent(_ event: SensoryEvent) {

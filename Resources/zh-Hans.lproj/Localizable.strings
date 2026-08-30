@@ -18,6 +18,10 @@
 "home.rank.zen" = "ZEN · 本地";
 "home.rank.connect" = "连接";
 "home.language" = "语言";
+"home.settings" = "音频";
+"settings.music" = "音乐";
+"settings.sound" = "音效";
+"settings.haptics" = "震动";
 "mode.classic.detail" = "原版平衡节奏。";
 "mode.rush.detail" = "决策更快，移动更快。";
 "mode.precision.detail" = "每回合只能切换一次分支。";

@@ -19,6 +19,9 @@ final class PlayerProfile {
         static let modeBest = "collapse.mode.best"
         static let modeDailyBest = "collapse.mode.dailyBest"
         static let modeTopScores = "collapse.mode.topScores"
+        static let musicEnabled = "collapse.audio.music"
+        static let soundEnabled = "collapse.audio.sound"
+        static let hapticsEnabled = "collapse.audio.haptics"
     }
 
     private let defaults: UserDefaults
@@ -40,6 +43,18 @@ final class PlayerProfile {
 
     var selectedLanguage: AppLanguage {
         didSet { defaults.set(selectedLanguage.rawValue, forKey: Key.language) }
+    }
+
+    var musicEnabled: Bool {
+        didSet { defaults.set(musicEnabled, forKey: Key.musicEnabled) }
+    }
+
+    var soundEnabled: Bool {
+        didSet { defaults.set(soundEnabled, forKey: Key.soundEnabled) }
+    }
+
+    var hapticsEnabled: Bool {
+        didSet { defaults.set(hapticsEnabled, forKey: Key.hapticsEnabled) }
     }
 
     private(set) var dailyRunStreak: Int {
@@ -68,6 +83,9 @@ final class PlayerProfile {
         selectedSkin = GameSkin(rawValue: defaults.string(forKey: Key.skin) ?? "") ?? .classic
         selectedMode = GameMode(rawValue: defaults.string(forKey: Key.mode) ?? "") ?? .classic
         selectedLanguage = AppLanguage(rawValue: defaults.string(forKey: Key.language) ?? "") ?? .systemDefault
+        musicEnabled = defaults.object(forKey: Key.musicEnabled) as? Bool ?? true
+        soundEnabled = defaults.object(forKey: Key.soundEnabled) as? Bool ?? true
+        hapticsEnabled = defaults.object(forKey: Key.hapticsEnabled) as? Bool ?? true
         dailyRunStreak = defaults.integer(forKey: Key.dailyStreak)
         lastRunDate = defaults.object(forKey: Key.lastRunDate) as? Date
         gemBalance = defaults.integer(forKey: Key.gemBalance)

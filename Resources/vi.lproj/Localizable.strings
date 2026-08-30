@@ -18,6 +18,10 @@
 "home.rank.zen" = "ZEN · LOCAL";
 "home.rank.connect" = "KẾT NỐI";
 "home.language" = "NGÔN NGỮ";
+"home.settings" = "ÂM THANH";
+"settings.music" = "NHẠC";
+"settings.sound" = "ÂM THANH";
+"settings.haptics" = "RUNG";
 "mode.classic.detail" = "Nhịp cân bằng nguyên bản.";
 "mode.rush.detail" = "Quyết định nhanh, chuyển động nhanh.";
 "mode.precision.detail" = "Chỉ một lần đổi nhánh mỗi round.";

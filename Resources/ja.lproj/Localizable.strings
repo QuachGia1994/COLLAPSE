@@ -18,6 +18,10 @@
 "home.rank.zen" = "ZEN · ローカル";
 "home.rank.connect" = "接続";
 "home.language" = "言語";
+"home.settings" = "サウンド";
+"settings.music" = "音楽";
+"settings.sound" = "効果音";
+"settings.haptics" = "振動";
 "mode.classic.detail" = "バランスの取れた基本リズム。";
 "mode.rush.detail" = "判断時間と移動がより速い。";
 "mode.precision.detail" = "各ラウンドで分岐変更は1回だけ。";

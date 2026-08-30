@@ -54,6 +54,7 @@ struct HomeView: View {
             )
             Spacer(minLength: 8)
             tutorialQuickButton
+            audioMenu
             languageMenu
         }
         .frame(maxWidth: 380)
@@ -69,6 +70,29 @@ struct HomeView: View {
         }
         .accessibilityLabel(language.text("home.tutorial"))
         .accessibilityIdentifier("home.tutorial.quick")
+    }
+
+    private var audioMenu: some View {
+        Menu {
+            Toggle(language.text("settings.music"), isOn: audioBinding(\.musicEnabled))
+            Toggle(language.text("settings.sound"), isOn: audioBinding(\.soundEnabled))
+            Toggle(language.text("settings.haptics"), isOn: audioBinding(\.hapticsEnabled))
+        } label: {
+            Image(systemName: "switch.2")
+                .font(.caption.weight(.bold))
+                .frame(width: 42, height: 42)
+                .background(.thinMaterial, in: Circle())
+                .overlay { Circle().stroke(.white.opacity(0.14), lineWidth: 1) }
+        }
+        .accessibilityLabel(language.text("home.settings"))
+        .accessibilityIdentifier("home.audio.settings")
+    }
+
+    private func audioBinding(_ keyPath: KeyPath<PlayerProfile, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { profile[keyPath: keyPath] },
+            set: { profile[keyPath: keyPath] = $0 }
+        )
     }
 
     private var languageMenu: some View {

@@ -18,6 +18,10 @@
 "home.rank.zen" = "ZEN · LOCAL";
 "home.rank.connect" = "CONNECT";
 "home.language" = "LANGUAGE";
+"home.settings" = "AUDIO";
+"settings.music" = "MUSIC";
+"settings.sound" = "SOUND";
+"settings.haptics" = "HAPTICS";
 "mode.classic.detail" = "Balanced original rhythm.";
 "mode.rush.detail" = "Faster decisions and faster travel.";
 "mode.precision.detail" = "Only one branch switch each round.";

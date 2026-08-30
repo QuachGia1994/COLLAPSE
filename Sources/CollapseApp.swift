@@ -6,9 +6,11 @@ struct CollapseApp: App {
     @State private var profile = PlayerProfile()
     @State private var entitlement = EntitlementStore()
     @State private var sensory = SensoryEngine()
+    @State private var music = BackgroundMusicPlayer()
     @State private var runActivity = RunActivityController()
     @State private var gameCenter = GameCenterStore()
     @State private var isShowingStartup = true
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -34,6 +36,29 @@ struct CollapseApp: App {
                 }
             }
             .task { await bootstrap() }
+            .onChange(of: scenePhase) { _, phase in
+                switch phase {
+                case .active:
+                    if profile.musicEnabled { music.play() }
+                case .background:
+                    music.pause()
+                default:
+                    break
+                }
+            }
+            .onChange(of: profile.musicEnabled) { _, enabled in
+                if enabled && scenePhase == .active {
+                    music.play()
+                } else {
+                    music.pause()
+                }
+            }
+            .onChange(of: profile.soundEnabled) { _, enabled in
+                sensory.soundEnabled = enabled
+            }
+            .onChange(of: profile.hapticsEnabled) { _, enabled in
+                sensory.hapticsEnabled = enabled
+            }
         }
     }
 
@@ -57,6 +82,9 @@ struct CollapseApp: App {
     }
 
     private func bootstrap() async {
+        sensory.soundEnabled = profile.soundEnabled
+        sensory.hapticsEnabled = profile.hapticsEnabled
+        if profile.musicEnabled { music.play() }
         gameCenter.start()
         await runActivity.cleanupStaleActivities()
         do {
