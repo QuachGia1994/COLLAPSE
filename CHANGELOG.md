@@ -4,6 +4,8 @@
 
 ### Added
 - Audio settings on both platforms with full parity: music, sound-effect, and haptics toggles persisted per install and reachable from a Home audio menu; iOS now plays the same looping CC0 `duru-arcade-vibe` background track as Android with lifecycle pause/resume and lower volume in Power Save Mode.
+- Android launcher icon now derives from the canonical iOS AppIcon artwork: generated legacy mipmaps for API < 26 plus adaptive foreground/background layers and a monochrome layer for Android 13 themed icons.
+- Android haptics and SFX now mirror the iOS feel: vibration amplitudes follow the iOS Core Haptics intensity curves (including quality-driven guidance intensity and a single dull failure thud), and procedural sine tones reuse the exact iOS frequencies, durations, volumes, and quality-driven guidance volume/playback-rate modulation.
 - Android foreground background music using the CC0 `duru-arcade-vibe` track from `uncle-sheepsky/duru-cc0-bgm`, with lifecycle pause/resume and lower volume in Power Save Mode.
 - Mode-scoped best/today/top-score persistence so CLASSIC/RUSH/PRECISION/DAILY records are no longer mixed together; streak and gem balance remain account-wide.
 - Game Center leaderboards on iOS and Play Games Services v2 leaderboards on Android, with per-mode IDs, remote rank display, offline score queue, and retry on reconnect; Zen stays local-only.
@@ -34,6 +36,7 @@
 - Procedural centered startup branding on iOS and Android without adding new external image assets.
 
 ### Changed
+- Android now mirrors the iOS visual system (iOS remains the source of truth) across Home, Game, Pause, Game Over, Tutorial, Plus, Skin, and Startup: glass hierarchy and border alphas, card radii and max widths, header circular glass buttons, Home orb capsules, tutorial board aspect/dash/hazard geometry, step and selection animation timing (220/240 ms), Plus orb ring and plan cards, skin preview capsules and card previews, startup logo circle, overlay shade, and canvas render values (portal glow, decision ring, feedback rings, hazard spikes).
 - Android is no longer a reduced test client: iOS is now the shared visual/behavior source of truth for cross-platform screens and gameplay, while platform-only UI such as Dynamic Island remains iOS-only.
 - Android now uses the same skin access rules as iOS, persists profile/economy state with SharedPreferences, and provides a vector COLLAPSE launcher icon instead of a generic app icon.
 - Android Plus mirrors iOS benefits, locks, and fairness messaging without fabricating Google Play purchases before Billing integration.
