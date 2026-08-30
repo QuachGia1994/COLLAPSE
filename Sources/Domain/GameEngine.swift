@@ -25,6 +25,9 @@ final class GameEngine {
     private(set) var travelProgress = 0.0
     private(set) var rejectedBranch: TimelineBranch?
     private(set) var collapseProgress = 0.0
+    private(set) var economy = RunEconomy()
+    private(set) var didCollectCurrentGem = false
+    private(set) var feedback: GameFeedback?
     var selectedBranch: TimelineBranch = .cyan
 
     init(seed: UInt64 = 0xC011A953, sensory: SensoryClient = .silent) {
@@ -41,11 +44,6 @@ final class GameEngine {
         max(0.62, 0.90 - Double(score) * 0.012)
     }
 
-    var choiceProgress: Double {
-        guard state == .playing, phase == .choosing else { return 0 }
-        return min(max((Self.now() - choiceStartedAt) / choiceDuration, 0), 1)
-    }
-
     var guidanceQuality: Double {
         let progress = round.hazard.pathProgress
         let candidate = round.path(for: selectedBranch).point(at: progress)
@@ -55,23 +53,37 @@ final class GameEngine {
         return min(clearance / (round.hazard.radius * 4), 1)
     }
 
+    func choiceProgress(at requestedTime: Double? = nil) -> Double {
+        guard state == .playing, phase == .choosing else { return 0 }
+        let time = requestedTime ?? Self.now()
+        return min(max((time - choiceStartedAt) / choiceDuration, 0), 1)
+    }
+
+    func feedbackProgress(at requestedTime: Double? = nil) -> Double? {
+        guard let feedback else { return nil }
+        let time = requestedTime ?? Self.now()
+        return min(max((time - feedback.startedAt) / 0.38, 0), 1)
+    }
+
     func connectSensory(_ sensory: SensoryClient) {
         self.sensory.stopGuidance()
         self.sensory = sensory
-        if state == .playing, phase == .choosing {
-            sensory.beginGuidance(guidanceQuality)
-        }
+        guard state == .playing, phase == .choosing else { return }
+        sensory.beginGuidance(guidanceQuality)
     }
 
     func start(at requestedTime: Double? = nil) {
         let time = requestedTime ?? Self.now()
         score = 0
+        economy.reset()
         roundIndex = 0
         round = generator.makeRound(index: roundIndex)
         selectedBranch = .cyan
         travelProgress = 0
         rejectedBranch = nil
         collapseProgress = 0
+        didCollectCurrentGem = false
+        feedback = nil
         phase = .choosing
         state = .playing
         pausedAt = nil
@@ -88,13 +100,13 @@ final class GameEngine {
     func tick(at requestedTime: Double? = nil) {
         guard state == .playing else { return }
         let time = requestedTime ?? Self.now()
+        expireFeedback(at: time)
         switch phase {
         case .ready, .dead:
             return
         case .choosing:
-            if time - choiceStartedAt >= choiceDuration {
-                commit(at: time)
-            }
+            guard time - choiceStartedAt >= choiceDuration else { return }
+            commit(at: time)
         case .traveling:
             updateTravel(at: time)
         }
@@ -111,12 +123,7 @@ final class GameEngine {
         guard state == .paused, let pausedAt else { return }
         let time = requestedTime ?? Self.now()
         let pausedDuration = max(0, time - pausedAt)
-        if phase == .choosing {
-            choiceStartedAt += pausedDuration
-            sensory.beginGuidance(guidanceQuality)
-        } else if phase == .traveling {
-            travelStartedAt += pausedDuration
-        }
+        shiftActiveClock(by: pausedDuration)
         self.pausedAt = nil
         state = .playing
     }
@@ -124,6 +131,16 @@ final class GameEngine {
     func restart(at requestedTime: Double? = nil) {
         sensory.stopGuidance()
         start(at: requestedTime)
+    }
+
+    private func shiftActiveClock(by pausedDuration: Double) {
+        if phase == .choosing {
+            choiceStartedAt += pausedDuration
+            sensory.beginGuidance(guidanceQuality)
+            return
+        }
+        guard phase == .traveling else { return }
+        travelStartedAt += pausedDuration
     }
 
     private func commit(at time: Double) {
@@ -140,19 +157,34 @@ final class GameEngine {
         let elapsed = time - travelStartedAt
         travelProgress = min(max(elapsed / travelDuration, 0), 1)
         collapseProgress = min(max(elapsed / 0.42, 0), 1)
+        collectGemIfNeeded(at: time)
 
         if selectedBranch == round.dangerBranch, travelProgress >= round.hazard.pathProgress - 0.035 {
-            phase = .dead
-            state = .gameOver
-            sensory.failure()
+            endRun(at: time)
             return
         }
 
-        if travelProgress >= 1 {
-            score += 1
-            sensory.success()
-            prepareNextRound(at: time)
-        }
+        guard travelProgress >= 1 else { return }
+        score += 1
+        sensory.success()
+        prepareNextRound(at: time)
+    }
+
+    private func collectGemIfNeeded(at time: Double) {
+        guard !didCollectCurrentGem else { return }
+        guard selectedBranch == round.safeBranch else { return }
+        guard travelProgress >= round.gem.pathProgress else { return }
+        didCollectCurrentGem = true
+        economy.collect(round.gem)
+        feedback = GameFeedback(kind: .gem, startedAt: time)
+        sensory.gem()
+    }
+
+    private func endRun(at time: Double) {
+        phase = .dead
+        state = .gameOver
+        feedback = GameFeedback(kind: .collision, startedAt: time)
+        sensory.failure()
     }
 
     private func prepareNextRound(at time: Double) {
@@ -162,12 +194,18 @@ final class GameEngine {
         travelProgress = 0
         rejectedBranch = nil
         collapseProgress = 0
+        didCollectCurrentGem = false
         phase = .choosing
         choiceStartedAt = time + 0.12
         sensory.beginGuidance(guidanceQuality)
     }
 
+    private func expireFeedback(at time: Double) {
+        guard let feedback, time - feedback.startedAt > 0.42 else { return }
+        self.feedback = nil
+    }
+
     private static func now() -> Double {
-        ProcessInfo.processInfo.systemUptime
+        Date.now.timeIntervalSinceReferenceDate
     }
 }

@@ -38,6 +38,11 @@ jobs:
           version="$(xcodebuild -version | head -1)"
           [[ "$version" == Xcode\ 27* ]] || { echo "Expected Xcode 27, got: $version"; exit 1; }
 
+      - name: Require Swift 6.4
+        run: |
+          version="$(swift --version | head -1)"
+          [[ "$version" == *"Swift version 6.4"* ]] || { echo "Expected Swift 6.4, got: $version"; exit 1; }
+
       - name: Generate Xcode project
         run: xcodegen generate
 
@@ -91,9 +96,45 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             test
 
+      - name: Build unsigned device app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Collapse.xcodeproj \
+            -scheme Collapse \
+            -configuration Release \
+            -derivedDataPath .build-device \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          rm -rf .artifacts
+          mkdir -p .artifacts/Payload
+          cp -R .build-device/Build/Products/Release-iphoneos/Collapse.app .artifacts/Payload/Collapse.app
+          cd .artifacts
+          /usr/bin/zip -qry COLLAPSE-unsigned.ipa Payload
+
+      - name: Enforce iOS beta size target
+        run: |
+          size="$(stat -f%z .artifacts/COLLAPSE-unsigned.ipa)"
+          limit="$((25 * 1024 * 1024))"
+          echo "Unsigned IPA bytes: $size"
+          [[ "$size" -lt "$limit" ]] || { echo "Unsigned IPA exceeds 25 MB target"; exit 1; }
+
       - name: Upload simulator app
         uses: actions/upload-artifact@v4
         with:
           name: COLLAPSE-iOS-Simulator-Xcode27
           path: .build/Build/Products/Debug-iphonesimulator/Collapse.app
+          if-no-files-found: error
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: COLLAPSE-iOS-Unsigned-IPA
+          path: .artifacts/COLLAPSE-unsigned.ipa
           if-no-files-found: error

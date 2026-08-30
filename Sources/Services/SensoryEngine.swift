@@ -3,11 +3,20 @@ import CoreHaptics
 import Foundation
 import Observation
 
+enum SensoryError: Error, Equatable, Sendable {
+    case audioSetupFailed
+    case hapticSetupFailed
+    case hapticParameterUpdateFailed
+    case hapticStopFailed
+    case hapticPlaybackFailed
+}
+
 struct SensoryClient: Sendable {
     let beginGuidance: @MainActor @Sendable (Double) -> Void
     let updateGuidance: @MainActor @Sendable (Double) -> Void
     let stopGuidance: @MainActor @Sendable () -> Void
     let commit: @MainActor @Sendable () -> Void
+    let gem: @MainActor @Sendable () -> Void
     let success: @MainActor @Sendable () -> Void
     let failure: @MainActor @Sendable () -> Void
 
@@ -16,6 +25,7 @@ struct SensoryClient: Sendable {
         updateGuidance: { _ in },
         stopGuidance: {},
         commit: {},
+        gem: {},
         success: {},
         failure: {}
     )
@@ -34,6 +44,7 @@ final class SensoryEngine {
 
     private(set) var supportsHaptics = false
     private(set) var isAudioRunning = false
+    private(set) var lastError: SensoryError?
 
     init() {
         configureAudioGraph()
@@ -46,6 +57,7 @@ final class SensoryEngine {
             updateGuidance: { [weak self] quality in self?.updateGuidance(quality: quality) },
             stopGuidance: { [weak self] in self?.stopGuidance() },
             commit: { [weak self] in self?.playEvent(.commit) },
+            gem: { [weak self] in self?.playEvent(.gem) },
             success: { [weak self] in self?.playEvent(.success) },
             failure: { [weak self] in self?.playEvent(.failure) }
         )
@@ -71,6 +83,7 @@ final class SensoryEngine {
             hapticEngine = engine
         } catch {
             supportsHaptics = false
+            lastError = .hapticSetupFailed
         }
     }
 
@@ -85,51 +98,64 @@ final class SensoryEngine {
         let value = min(max(quality, 0), 1)
         rateNode.rate = Float(0.82 + value * 0.58)
         guidanceNode.volume = Float(0.020 + value * 0.018)
-
         guard let guidancePlayer else { return }
-        let intensity = Float(0.68 - value * 0.38)
-        let sharpness = Float(-0.35 + value * 1.20)
-        let parameters = [
+        do {
+            try guidancePlayer.sendParameters(dynamicParameters(for: value), atTime: 0)
+        } catch {
+            lastError = .hapticParameterUpdateFailed
+        }
+    }
+
+    private func dynamicParameters(for quality: Double) -> [CHHapticDynamicParameter] {
+        let intensity = Float(0.68 - quality * 0.38)
+        let sharpness = Float(-0.35 + quality * 1.20)
+        return [
             CHHapticDynamicParameter(parameterID: .hapticIntensityControl, value: intensity, relativeTime: 0),
             CHHapticDynamicParameter(parameterID: .hapticSharpnessControl, value: sharpness, relativeTime: 0)
         ]
-        try? guidancePlayer.sendParameters(parameters, atTime: 0)
     }
 
     private func stopGuidance() {
         guidanceNode.stop()
-        try? guidancePlayer?.stop(atTime: 0)
-        guidancePlayer = nil
+        guard let guidancePlayer else { return }
+        do {
+            try guidancePlayer.stop(atTime: 0)
+        } catch {
+            lastError = .hapticStopFailed
+        }
+        self.guidancePlayer = nil
     }
 
     private func startGuidanceAudio() {
-        guard let guidanceBuffer else { return }
-        if !guidanceNode.isPlaying {
-            guidanceNode.scheduleBuffer(guidanceBuffer, at: nil, options: .loops)
-            guidanceNode.play()
-        }
+        guard let guidanceBuffer, !guidanceNode.isPlaying else { return }
+        guidanceNode.scheduleBuffer(guidanceBuffer, at: nil, options: .loops)
+        guidanceNode.play()
     }
 
     private func startGuidanceHaptic() {
         guard supportsHaptics, let hapticEngine else { return }
         do {
             try hapticEngine.start()
-            let event = CHHapticEvent(
-                eventType: .hapticContinuous,
-                parameters: [
-                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.55),
-                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.20)
-                ],
-                relativeTime: 0,
-                duration: 2
-            )
-            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            let pattern = try CHHapticPattern(events: [guidanceHapticEvent], parameters: [])
             let player = try hapticEngine.makeAdvancedPlayer(with: pattern)
             guidancePlayer = player
             try player.start(atTime: 0)
         } catch {
             guidancePlayer = nil
+            lastError = .hapticPlaybackFailed
         }
+    }
+
+    private var guidanceHapticEvent: CHHapticEvent {
+        CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.55),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.20)
+            ],
+            relativeTime: 0,
+            duration: 2
+        )
     }
 
     private func playEvent(_ event: SensoryEvent) {
@@ -141,7 +167,10 @@ final class SensoryEngine {
 
     private func playAudioEvent(_ event: SensoryEvent) {
         let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)
-        guard let buffer = Self.makeToneBuffer(frequency: event.frequency, duration: event.duration, format: format) else { return }
+        guard let buffer = Self.makeToneBuffer(frequency: event.frequency, duration: event.duration, format: format) else {
+            lastError = .audioSetupFailed
+            return
+        }
         eventNode.stop()
         eventNode.scheduleBuffer(buffer)
         eventNode.volume = Float(event.volume)
@@ -152,19 +181,11 @@ final class SensoryEngine {
         guard supportsHaptics, let hapticEngine else { return }
         do {
             try hapticEngine.start()
-            let haptic = CHHapticEvent(
-                eventType: .hapticTransient,
-                parameters: [
-                    CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(event.hapticIntensity)),
-                    CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(event.hapticSharpness))
-                ],
-                relativeTime: 0
-            )
-            let pattern = try CHHapticPattern(events: [haptic], parameters: [])
+            let pattern = try CHHapticPattern(events: [event.hapticEvent], parameters: [])
             let player = try hapticEngine.makePlayer(with: pattern)
             try player.start(atTime: 0)
         } catch {
-            return
+            lastError = .hapticPlaybackFailed
         }
     }
 
@@ -178,19 +199,15 @@ final class SensoryEngine {
             isAudioRunning = true
         } catch {
             isAudioRunning = false
+            lastError = .audioSetupFailed
         }
     }
 
     private static func makeToneBuffer(frequency: Double, duration: Double, format: AVAudioFormat?) -> AVAudioPCMBuffer? {
-        guard let format, let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(format.sampleRate * duration)
-        ), let channel = buffer.floatChannelData?[0] else { return nil }
-
+        guard let format, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(format.sampleRate * duration)), let channel = buffer.floatChannelData?[0] else { return nil }
         buffer.frameLength = buffer.frameCapacity
-        let sampleRate = format.sampleRate
         for frame in 0..<Int(buffer.frameLength) {
-            let phase = 2 * Double.pi * frequency * Double(frame) / sampleRate
+            let phase = 2 * Double.pi * frequency * Double(frame) / format.sampleRate
             channel[frame] = Float(sin(phase) * 0.18)
         }
         return buffer
@@ -199,12 +216,14 @@ final class SensoryEngine {
 
 private enum SensoryEvent {
     case commit
+    case gem
     case success
     case failure
 
     var frequency: Double {
         switch self {
         case .commit: 320
+        case .gem: 980
         case .success: 720
         case .failure: 118
         }
@@ -213,6 +232,7 @@ private enum SensoryEvent {
     var duration: Double {
         switch self {
         case .commit: 0.08
+        case .gem: 0.07
         case .success: 0.11
         case .failure: 0.20
         }
@@ -221,22 +241,36 @@ private enum SensoryEvent {
     var volume: Double {
         switch self {
         case .commit: 0.05
+        case .gem: 0.075
         case .success: 0.07
         case .failure: 0.06
         }
     }
 
-    var hapticIntensity: Double {
+    var hapticEvent: CHHapticEvent {
+        CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(hapticIntensity)),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(hapticSharpness))
+            ],
+            relativeTime: 0
+        )
+    }
+
+    private var hapticIntensity: Double {
         switch self {
         case .commit: 0.72
+        case .gem: 0.44
         case .success: 0.52
         case .failure: 0.95
         }
     }
 
-    var hapticSharpness: Double {
+    private var hapticSharpness: Double {
         switch self {
         case .commit: 0.78
+        case .gem: 1.0
         case .success: 0.92
         case .failure: 0.10
         }

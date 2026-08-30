@@ -17,9 +17,8 @@ final class RenderBudgetMonitor {
         peakMilliseconds = max(peakMilliseconds, milliseconds)
         sampleCount += 1
         averageMilliseconds += (milliseconds - averageMilliseconds) / Double(sampleCount)
-        if milliseconds > Self.targetMilliseconds {
-            overBudgetFrames += 1
-        }
+        guard milliseconds > Self.targetMilliseconds else { return }
+        overBudgetFrames += 1
     }
 
     func reset() {

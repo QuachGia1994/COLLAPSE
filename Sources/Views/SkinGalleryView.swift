@@ -6,59 +6,72 @@ struct SkinGalleryView: View {
     @Environment(EntitlementStore.self) private var entitlement
     @State private var previewSkin: GameSkin = .classic
     @State private var showsPlus = false
+    @State private var showsInsufficientGems = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 skinPreview
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(GameSkin.allCases) { skin in
-                        Button {
-                            choose(skin)
-                        } label: {
-                            SkinCard(skin: skin, selected: profile.selectedSkin == skin, unlocked: isUnlocked(skin))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
+                balanceChip
+                skinGrid
 
                 if !entitlement.isPlusUnlocked {
-                    Button("MỞ COLLAPSE PLUS") {
-                        showsPlus = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.yellow)
-                    .controlSize(.large)
+                    Button("MỞ COLLAPSE PLUS") { showsPlus = true }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.yellow)
+                        .controlSize(.large)
                 }
             }
             .padding(18)
         }
         .background(Color.black.ignoresSafeArea())
         .navigationTitle("Skin")
-        .sheet(isPresented: $showsPlus) {
-            PlusView()
+        .sheet(isPresented: $showsPlus) { PlusView() }
+        .alert("Không đủ gem", isPresented: $showsInsufficientGems) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Chơi thêm và thu gem trên nhánh an toàn để mở skin này.")
         }
-        .onAppear {
-            previewSkin = profile.selectedSkin
+        .onAppear { previewSkin = profile.activeSkin(isPlusUnlocked: entitlement.isPlusUnlocked) }
+    }
+
+    private var skinGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            ForEach(GameSkin.allCases) { skin in
+                Button {
+                    choose(skin)
+                } label: {
+                    SkinCard(
+                        skin: skin,
+                        selected: profile.selectedSkin == skin,
+                        unlocked: isUnlocked(skin)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
         }
+    }
+
+    private var balanceChip: some View {
+        Label("\(profile.gemBalance) gem", systemImage: "diamond.fill")
+            .font(.subheadline.monospacedDigit().weight(.semibold))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(.thinMaterial, in: Capsule())
     }
 
     private var skinPreview: some View {
         let palette = previewSkin.palette
         return ZStack {
             LinearGradient(colors: [palette.backgroundTop, palette.backgroundBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(.thinMaterial)
+                .opacity(0.22)
             Circle()
                 .stroke(palette.primary.opacity(0.65), lineWidth: 2)
                 .frame(width: 190, height: 190)
-            Capsule()
-                .fill(palette.primary)
-                .frame(width: 110, height: 3)
-                .rotationEffect(.degrees(-14))
-            Capsule()
-                .fill(palette.secondary)
-                .frame(width: 110, height: 3)
-                .rotationEffect(.degrees(14))
+            Capsule().fill(palette.primary).frame(width: 110, height: 3).rotationEffect(.degrees(-14))
+            Capsule().fill(palette.secondary).frame(width: 110, height: 3).rotationEffect(.degrees(14))
             Circle().fill(palette.safe).frame(width: 17, height: 17).offset(x: 72)
             Circle().stroke(palette.danger, lineWidth: 3).frame(width: 22, height: 22).offset(x: 48, y: 49)
             VStack {
@@ -80,15 +93,27 @@ struct SkinGalleryView: View {
 
     private func choose(_ skin: GameSkin) {
         previewSkin = skin
-        guard isUnlocked(skin) else {
-            showsPlus = true
+        if isUnlocked(skin) {
+            profile.selectedSkin = skin
             return
         }
-        profile.selectedSkin = skin
+
+        switch skin.access {
+        case .free:
+            profile.selectedSkin = skin
+        case .gems:
+            guard profile.unlock(skin) else {
+                showsInsufficientGems = true
+                return
+            }
+            profile.selectedSkin = skin
+        case .plus:
+            showsPlus = true
+        }
     }
 
     private func isUnlocked(_ skin: GameSkin) -> Bool {
-        !skin.requiresPlus || entitlement.isPlusUnlocked
+        profile.isUnlocked(skin, isPlusUnlocked: entitlement.isPlusUnlocked)
     }
 }
 
@@ -100,38 +125,59 @@ private struct SkinCard: View {
     var body: some View {
         let palette = skin.palette
         VStack(alignment: .leading, spacing: 10) {
-            ZStack {
-                LinearGradient(colors: [palette.backgroundTop, palette.backgroundBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
-                Circle()
-                    .stroke(palette.primary.opacity(0.72), lineWidth: 2)
-                    .frame(width: 88, height: 88)
-                HStack(spacing: 28) {
-                    Circle().fill(palette.primary).frame(width: 9, height: 9)
-                    Circle().fill(palette.safe).frame(width: 9, height: 9)
-                }
-                if !unlocked {
-                    Image(systemName: "lock.fill")
-                        .font(.caption)
-                        .padding(8)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                        .padding(8)
-                }
-            }
-            .frame(height: 128)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
+            preview(palette: palette)
             Text(skin.title)
                 .font(.subheadline.weight(.semibold))
-            Text(skin.subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(skin.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(accessLabel)
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(unlocked ? .green : .yellow)
+            }
         }
         .padding(10)
-        .background(selected ? palette.primary.opacity(0.11) : Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(selected ? palette.primary.opacity(0.70) : .white.opacity(0.06), lineWidth: selected ? 1.5 : 1)
+                .stroke(selected ? palette.primary.opacity(0.70) : .white.opacity(0.08), lineWidth: selected ? 1.5 : 1)
+        }
+    }
+
+    private func preview(palette: SkinPalette) -> some View {
+        ZStack {
+            LinearGradient(colors: [palette.backgroundTop, palette.backgroundBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+            Circle()
+                .stroke(palette.primary.opacity(0.72), lineWidth: 2)
+                .frame(width: 88, height: 88)
+            HStack(spacing: 28) {
+                Circle().fill(palette.primary).frame(width: 9, height: 9)
+                Circle().fill(palette.safe).frame(width: 9, height: 9)
+            }
+            if !unlocked {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .padding(8)
+                    .background(.thinMaterial, in: Circle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(8)
+            }
+        }
+        .frame(height: 128)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var accessLabel: String {
+        guard !unlocked else { return "ĐÃ MỞ" }
+        switch skin.access {
+        case .free:
+            return "FREE"
+        case .gems(let cost):
+            return "◆\(cost)"
+        case .plus:
+            return "PLUS"
         }
     }
 }

@@ -11,78 +11,54 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 background
-
-                VStack(spacing: 26) {
+                glassBackdrop
+                VStack(spacing: 24) {
                     Spacer()
-
                     logo
                     homeOrb
-
-                    VStack(spacing: 12) {
-                        NavigationLink {
-                            GameView()
-                        } label: {
-                            Label("CHƠI", systemImage: "play.fill")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(profile.selectedSkin.palette.primary)
-                        .controlSize(.large)
-
-                        HStack(spacing: 10) {
-                            NavigationLink {
-                                SkinGalleryView()
-                            } label: {
-                                Label("SKIN", systemImage: "circle.hexagongrid")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-
-                            Button {
-                                showsPlus = true
-                            } label: {
-                                Label(entitlement.isPlusUnlocked ? "PLUS" : "PLUS", systemImage: "diamond.fill")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(.yellow)
-                        }
-                    }
-                    .frame(maxWidth: 360)
-
-                    HStack(spacing: 24) {
-                        metric(title: "KỶ LỤC", value: "\(profile.bestScore)")
-                        metric(title: "DAILY", value: "🔥\(profile.dailyRunStreak)")
-                        metric(title: "SKIN", value: profile.selectedSkin.title.uppercased())
-                    }
-
-                    Button("Xem lại hướng dẫn") {
-                        showsTutorial = true
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
+                    actionCard
+                    metricsCard
+                    Button("Xem lại hướng dẫn") { showsTutorial = true }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     Spacer(minLength: 22)
                 }
                 .padding(22)
             }
             .toolbar(.hidden, for: .navigationBar)
         }
-        .sheet(isPresented: $showsPlus) {
-            PlusView()
-        }
-        .fullScreenCover(isPresented: $showsTutorial) {
-            TutorialReplayView()
-        }
+        .sheet(isPresented: $showsPlus) { PlusView() }
+        .fullScreenCover(isPresented: $showsTutorial) { TutorialReplayView() }
+    }
+
+    private var activeSkin: GameSkin {
+        profile.activeSkin(isPlusUnlocked: entitlement.isPlusUnlocked)
     }
 
     private var background: some View {
         LinearGradient(
-            colors: [profile.selectedSkin.palette.backgroundTop, profile.selectedSkin.palette.backgroundBottom],
+            colors: [activeSkin.palette.backgroundTop, activeSkin.palette.backgroundBottom],
             startPoint: .top,
             endPoint: .bottom
         )
         .ignoresSafeArea()
+    }
+
+    private var glassBackdrop: some View {
+        ZStack {
+            Circle()
+                .fill(.thinMaterial)
+                .frame(width: 320, height: 320)
+                .offset(x: -140, y: -270)
+                .opacity(0.24)
+            Circle()
+                .fill(.regularMaterial)
+                .frame(width: 280, height: 280)
+                .offset(x: 150, y: 290)
+                .opacity(0.18)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 
     private var logo: some View {
@@ -98,27 +74,73 @@ struct HomeView: View {
     }
 
     private var homeOrb: some View {
-        let palette = profile.selectedSkin.palette
+        let palette = activeSkin.palette
         return ZStack {
             Circle()
-                .stroke(palette.primary.opacity(0.32), lineWidth: 2)
+                .fill(.thinMaterial)
+                .frame(width: 224, height: 224)
+            Circle()
+                .stroke(palette.primary.opacity(0.34), lineWidth: 2)
                 .frame(width: 220, height: 220)
-            Circle()
-                .fill(palette.primary)
-                .frame(width: 16, height: 16)
-                .offset(x: -92)
-            Circle()
-                .fill(palette.safe)
-                .frame(width: 17, height: 17)
-                .offset(x: 90, y: -55)
-            Circle()
-                .stroke(palette.danger, lineWidth: 3)
-                .frame(width: 22, height: 22)
-                .offset(x: 72, y: 62)
+            Circle().fill(palette.primary).frame(width: 16, height: 16).offset(x: -92)
+            Circle().fill(palette.safe).frame(width: 17, height: 17).offset(x: 90, y: -55)
+            Circle().stroke(palette.danger, lineWidth: 3).frame(width: 22, height: 22).offset(x: 72, y: 62)
             pathLine(color: palette.primary, rotation: -17)
             pathLine(color: palette.secondary, rotation: 20)
         }
         .frame(height: 240)
+    }
+
+    private var actionCard: some View {
+        VStack(spacing: 12) {
+            NavigationLink {
+                GameView()
+            } label: {
+                Label("CHƠI", systemImage: "play.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(activeSkin.palette.primary)
+            .controlSize(.large)
+
+            HStack(spacing: 10) {
+                NavigationLink {
+                    SkinGalleryView()
+                } label: {
+                    Label("SKIN", systemImage: "circle.hexagongrid")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    showsPlus = true
+                } label: {
+                    Label("PLUS", systemImage: entitlement.isPlusUnlocked ? "checkmark.seal.fill" : "diamond.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.yellow)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: 380)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(.white.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private var metricsCard: some View {
+        HStack(spacing: 20) {
+            metric(title: "KỶ LỤC", value: "\(profile.bestScore)")
+            metric(title: "HÔM NAY", value: "\(profile.dailyBestScore)")
+            metric(title: "STREAK", value: "🔥\(profile.dailyRunStreak)")
+            metric(title: "GEM", value: "◆\(profile.gemBalance)")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.thinMaterial, in: Capsule())
     }
 
     private func pathLine(color: Color, rotation: Double) -> some View {
@@ -134,7 +156,7 @@ struct HomeView: View {
                 .font(.subheadline.monospacedDigit().weight(.semibold))
             Text(title)
                 .font(.caption2)
-                .tracking(2)
+                .tracking(1.4)
                 .foregroundStyle(.secondary)
         }
     }

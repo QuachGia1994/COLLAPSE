@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum SkinAccess: Equatable, Sendable {
+    case free
+    case gems(Int)
+    case plus
+}
+
 enum GameSkin: String, CaseIterable, Identifiable, Codable, Sendable {
     case classic
     case nebula
@@ -32,7 +38,33 @@ enum GameSkin: String, CaseIterable, Identifiable, Codable, Sendable {
         }
     }
 
-    var requiresPlus: Bool { self != .classic }
+    var access: SkinAccess {
+        switch self {
+        case .classic: .free
+        case .aurora: .gems(25)
+        case .solar: .gems(60)
+        case .nebula, .obsidian, .frozenQuartz: .plus
+        }
+    }
+
+    var pulseFrequency: Double {
+        switch self {
+        case .classic: 2.0
+        case .aurora: 2.4
+        case .solar: 2.8
+        case .nebula: 3.1
+        case .obsidian: 1.6
+        case .frozenQuartz: 2.2
+        }
+    }
+
+    var pulseDepth: Double {
+        switch self {
+        case .classic: 0.08
+        case .aurora, .solar: 0.10
+        case .nebula, .obsidian, .frozenQuartz: 0.14
+        }
+    }
 
     var palette: SkinPalette {
         switch self {

@@ -19,7 +19,7 @@ struct CollapseApp: App {
         }
     }
 
-    @ContentBuilder
+    @ViewBuilder
     private var rootContent: some View {
         if profile.didCompleteTutorial {
             HomeView()
