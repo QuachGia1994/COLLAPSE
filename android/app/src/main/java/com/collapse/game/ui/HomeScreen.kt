@@ -126,13 +126,13 @@ private fun AudioMenu(profile: PlayerProfile, skin: GameSkin) {
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             AudioToggle(stringResource(R.string.settings_music), profile.musicEnabled) {
-                profile.setMusicEnabled(it)
+                profile.updateMusicEnabled(it)
             }
             AudioToggle(stringResource(R.string.settings_sound), profile.soundEnabled) {
-                profile.setSoundEnabled(it)
+                profile.updateSoundEnabled(it)
             }
             AudioToggle(stringResource(R.string.settings_haptics), profile.hapticsEnabled) {
-                profile.setHapticsEnabled(it)
+                profile.updateHapticsEnabled(it)
             }
         }
     }

@@ -88,7 +88,7 @@ struct HomeView: View {
         .accessibilityIdentifier("home.audio.settings")
     }
 
-    private func audioBinding(_ keyPath: KeyPath<PlayerProfile, Bool>) -> Binding<Bool> {
+    private func audioBinding(_ keyPath: ReferenceWritableKeyPath<PlayerProfile, Bool>) -> Binding<Bool> {
         Binding(
             get: { profile[keyPath: keyPath] },
             set: { profile[keyPath: keyPath] = $0 }

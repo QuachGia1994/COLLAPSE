@@ -51,17 +51,17 @@ class PlayerProfile(context: Context) {
         preferences.edit().putString(KEY_MODE, mode.name).apply()
     }
 
-    fun setMusicEnabled(enabled: Boolean) {
+    fun updateMusicEnabled(enabled: Boolean) {
         musicEnabled = enabled
         preferences.edit().putBoolean(KEY_MUSIC, enabled).apply()
     }
 
-    fun setSoundEnabled(enabled: Boolean) {
+    fun updateSoundEnabled(enabled: Boolean) {
         soundEnabled = enabled
         preferences.edit().putBoolean(KEY_SOUND, enabled).apply()
     }
 
-    fun setHapticsEnabled(enabled: Boolean) {
+    fun updateHapticsEnabled(enabled: Boolean) {
         hapticsEnabled = enabled
         preferences.edit().putBoolean(KEY_HAPTICS, enabled).apply()
     }
