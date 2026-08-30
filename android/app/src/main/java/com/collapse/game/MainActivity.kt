@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.collapse.game.services.BackgroundMusicPlayer
 import com.collapse.game.services.BillingStore
 import com.collapse.game.services.PlayerProfile
 import com.collapse.game.services.PlayGamesStore
@@ -61,6 +62,7 @@ private fun CollapseApp(activity: Activity) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val profile = remember { PlayerProfile(context.applicationContext) }
     val sensory = remember { SensoryEngine(context.applicationContext) }
+    val music = remember { BackgroundMusicPlayer(context.applicationContext) }
     val billing = remember { BillingStore(context.applicationContext) }
     val playGames = remember { PlayGamesStore(activity) }
     var route by remember { mutableStateOf(if (profile.didCompleteTutorial) AppRoute.Home else AppRoute.Tutorial) }
@@ -74,13 +76,22 @@ private fun CollapseApp(activity: Activity) {
         showsStartup = false
     }
 
-    DisposableEffect(sensory, billing, lifecycleOwner) {
+    DisposableEffect(sensory, music, billing, lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) billing.refresh()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    billing.refresh()
+                    music.play()
+                }
+                Lifecycle.Event.ON_PAUSE -> music.pause()
+                else -> Unit
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) music.play()
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            music.close()
             sensory.close()
             billing.close()
         }

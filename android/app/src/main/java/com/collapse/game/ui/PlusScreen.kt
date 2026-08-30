@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -49,8 +51,10 @@ fun PlusScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp, vertical = 34.dp),
+                .padding(horizontal = 22.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PlusOrb()
@@ -89,7 +93,13 @@ fun PlusScreen(
             )
             Spacer(Modifier.height(28.dp))
         }
-        OutlinedButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).padding(top = 24.dp, end = 14.dp)) {
+        OutlinedButton(
+            onClick = onClose,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(top = 6.dp, end = 14.dp)
+        ) {
             Text(stringResource(R.string.plus_close))
         }
     }

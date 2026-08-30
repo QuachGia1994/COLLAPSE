@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -172,7 +174,13 @@ fun GameScreen(
 
 @Composable
 private fun GameHud(controller: GameController, profile: PlayerProfile, skin: GameSkin) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 34.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
         GlassSurface(Modifier.fillMaxWidth(), radius = 24.dp) {
             Row(
                 Modifier.fillMaxWidth().padding(12.dp),

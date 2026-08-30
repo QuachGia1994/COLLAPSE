@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -54,7 +56,13 @@ fun SkinScreen(
     var showsInsufficientGems by remember { mutableStateOf(false) }
     val palette = preview.palette
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(palette.backgroundTop, palette.backgroundBottom)))) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 34.dp)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 18.dp, vertical = 12.dp)
+        ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 CollapseBrandMark(palette.primary, subtitle = stringResource(R.string.skin_title), compact = true, modifier = Modifier.weight(1f))
                 OutlinedButton(onClick = onBack) { Text(stringResource(R.string.skin_back)) }

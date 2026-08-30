@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Android foreground background music using the CC0 `duru-arcade-vibe` track from `uncle-sheepsky/duru-cc0-bgm`, with lifecycle pause/resume and lower volume in Power Save Mode.
 - Mode-scoped best/today/top-score persistence so CLASSIC/RUSH/PRECISION/DAILY records are no longer mixed together; streak and gem balance remain account-wide.
 - Game Center leaderboards on iOS and Play Games Services v2 leaderboards on Android, with per-mode IDs, remote rank display, offline score queue, and retry on reconnect; Zen stays local-only.
 - EN/VI/JA/zh-Hans in-app language switching, localized Home/game/tutorial/Plus/skin surfaces, and CI localization key parity checks on both platforms.
@@ -39,6 +40,7 @@
 - CI now builds the app and Live Activity extension on the GitHub Actions Xcode 27 public-preview runner and uploads `COLLAPSE-iOS-Simulator-Xcode27`.
 
 ### Fixed
+- Android Home no longer vertically centers an oversized scroll column into the status bar; Home, Skin, Plus, and Gameplay HUD now respect status/navigation insets while keeping decorative backgrounds edge-to-edge.
 - Android Pause control now uses a centered custom two-bar glyph inside a fixed 48dp circular hit target; iOS Pause uses a centered custom glass circle instead of system bordered-button padding.
 - Startup branding now stays centered independently of Home/Tutorial layout, avoiding offset/cropped logo composition on compact portrait devices.
 - Android tutorial header now keeps Skip/Close in the same responsive safe-area row as a compact brand mark, and board/card/CTA sizing adapts on compact-height portrait devices instead of overlapping or clipping.
