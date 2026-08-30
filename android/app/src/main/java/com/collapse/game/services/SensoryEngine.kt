@@ -122,7 +122,7 @@ class SensoryEngine(context: Context) : SensoryClient, AutoCloseable {
                 AudioFormat.Builder()
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                     .setSampleRate(SAMPLE_RATE)
-                    .setChannelConfig(AudioFormat.CHANNEL_OUT_MONO)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build()
             )
             .setBufferSizeInBytes(pcm.size)
