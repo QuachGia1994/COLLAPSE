@@ -35,10 +35,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.collapse.game.R
 import com.collapse.game.services.PlayerProfile
 
 @Composable
@@ -54,11 +56,11 @@ fun SkinScreen(
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(palette.backgroundTop, palette.backgroundBottom)))) {
         Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 34.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                CollapseBrandMark(palette.primary, subtitle = "SKIN", compact = true, modifier = Modifier.weight(1f))
-                OutlinedButton(onClick = onBack) { Text("Đóng") }
+                CollapseBrandMark(palette.primary, subtitle = stringResource(R.string.skin_title), compact = true, modifier = Modifier.weight(1f))
+                OutlinedButton(onClick = onBack) { Text(stringResource(R.string.skin_back)) }
             }
             SkinPreview(preview, Modifier.fillMaxWidth().height(230.dp).padding(vertical = 14.dp))
-            Text("◆ ${profile.gemBalance} GEM", color = Color.White.copy(alpha = 0.68f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 10.dp))
+            Text("◆ ${profile.gemBalance} ${stringResource(R.string.skin_gem)}", color = Color.White.copy(alpha = 0.68f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 10.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.weight(1f),
@@ -89,15 +91,15 @@ fun SkinScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = CollapseYellow)
                 ) {
-                    Text("MỞ COLLAPSE PLUS", color = Color.Black, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.skin_open_plus), color = Color.Black, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
         if (showsInsufficientGems) {
             AlertDialog(
                 onDismissRequest = { showsInsufficientGems = false },
-                title = { Text("Không đủ gem") },
-                text = { Text("Chơi thêm và thu gem trên nhánh an toàn để mở skin này.") },
+                title = { Text(stringResource(R.string.skin_insufficient_title)) },
+                text = { Text(stringResource(R.string.skin_insufficient_message)) },
                 confirmButton = {
                     TextButton(onClick = { showsInsufficientGems = false }) { Text("OK") }
                 }
@@ -195,17 +197,27 @@ private fun SkinCard(
                 }
             }
             Text(skin.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            Text(skin.subtitle, color = Color.White.copy(alpha = 0.48f), fontSize = 11.sp)
+            Text(stringResource(skinDetailResource(skin)), color = Color.White.copy(alpha = 0.48f), fontSize = 11.sp)
             Text(accessLabel(skin, unlocked), color = if (unlocked) palette.safe else CollapseYellow, fontSize = 10.sp, textAlign = TextAlign.Start)
         }
     }
 }
 
+private fun skinDetailResource(skin: GameSkin): Int = when (skin) {
+    GameSkin.Classic -> R.string.skin_classic_detail
+    GameSkin.Nebula -> R.string.skin_nebula_detail
+    GameSkin.Aurora -> R.string.skin_aurora_detail
+    GameSkin.Solar -> R.string.skin_solar_detail
+    GameSkin.Obsidian -> R.string.skin_obsidian_detail
+    GameSkin.FrozenQuartz -> R.string.skin_frozen_detail
+}
+
+@Composable
 private fun accessLabel(skin: GameSkin, unlocked: Boolean): String {
-    if (unlocked) return "ĐÃ MỞ"
+    if (unlocked) return stringResource(R.string.skin_unlocked)
     return when (val access = skin.access) {
         SkinAccess.Free -> "FREE"
-        is SkinAccess.Gems -> "◆ ${access.cost} GEM"
+        is SkinAccess.Gems -> "◆ ${access.cost} ${stringResource(R.string.skin_gem)}"
         SkinAccess.Plus -> "◆ PLUS"
     }
 }

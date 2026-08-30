@@ -3,7 +3,7 @@ package com.collapse.game
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -21,6 +21,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.collapse.game.services.BillingStore
 import com.collapse.game.services.PlayerProfile
+import com.collapse.game.services.PlayGamesStore
 import com.collapse.game.services.SensoryEngine
 import com.collapse.game.ui.CollapseTheme
 import com.collapse.game.ui.GameScreen
@@ -31,7 +32,7 @@ import com.collapse.game.ui.StartupScreen
 import com.collapse.game.ui.TutorialScreen
 import kotlinx.coroutines.delay
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -40,7 +41,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             CollapseTheme {
-                CollapseApp()
+                CollapseApp(activity = this@MainActivity)
             }
         }
     }
@@ -55,18 +56,20 @@ private enum class AppRoute {
 }
 
 @Composable
-private fun CollapseApp() {
+private fun CollapseApp(activity: Activity) {
     val context = LocalContext.current
-    val activity = context as? Activity
     val lifecycleOwner = LocalLifecycleOwner.current
     val profile = remember { PlayerProfile(context.applicationContext) }
     val sensory = remember { SensoryEngine(context.applicationContext) }
     val billing = remember { BillingStore(context.applicationContext) }
+    val playGames = remember { PlayGamesStore(activity) }
     var route by remember { mutableStateOf(if (profile.didCompleteTutorial) AppRoute.Home else AppRoute.Tutorial) }
     var tutorialReplay by remember { mutableStateOf(false) }
     var showsStartup by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
+        playGames.retryPending()
+        playGames.refresh(profile.selectedMode)
         delay(720)
         showsStartup = false
     }
@@ -97,6 +100,7 @@ private fun CollapseApp() {
     when (route) {
         AppRoute.Home -> HomeScreen(
             profile = profile,
+            playGames = playGames,
             isPlusUnlocked = billing.isPlusUnlocked,
             onPlay = { route = AppRoute.Game },
             onSkins = { route = AppRoute.Skins },
@@ -118,6 +122,7 @@ private fun CollapseApp() {
         AppRoute.Game -> GameScreen(
             profile = profile,
             sensory = sensory,
+            playGames = playGames,
             mode = profile.selectedMode,
             isPlusUnlocked = billing.isPlusUnlocked,
             onHome = { route = AppRoute.Home }
@@ -130,7 +135,7 @@ private fun CollapseApp() {
         )
         AppRoute.Plus -> PlusScreen(
             billing = billing,
-            onPurchase = { productId -> activity?.let { billing.purchase(it, productId) } },
+            onPurchase = { productId -> billing.purchase(activity, productId) },
             onClose = { route = AppRoute.Home }
         )
     }

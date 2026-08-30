@@ -8,6 +8,8 @@ struct SkinGalleryView: View {
     @State private var showsPlus = false
     @State private var showsInsufficientGems = false
 
+    private var language: AppLanguage { profile.selectedLanguage }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -16,7 +18,7 @@ struct SkinGalleryView: View {
                 skinGrid
 
                 if !entitlement.isPlusUnlocked {
-                    Button("MỞ COLLAPSE PLUS") { showsPlus = true }
+                    Button(language.text("skin.openPlus")) { showsPlus = true }
                         .buttonStyle(.borderedProminent)
                         .tint(.yellow)
                         .controlSize(.large)
@@ -25,12 +27,12 @@ struct SkinGalleryView: View {
             .padding(18)
         }
         .background(Color.black.ignoresSafeArea())
-        .navigationTitle("Skin")
+        .navigationTitle(language.text("skin.title"))
         .sheet(isPresented: $showsPlus) { PlusView() }
-        .alert("Không đủ gem", isPresented: $showsInsufficientGems) {
+        .alert(language.text("skin.insufficient.title"), isPresented: $showsInsufficientGems) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Chơi thêm và thu gem trên nhánh an toàn để mở skin này.")
+            Text(language.text("skin.insufficient.message"))
         }
         .onAppear { previewSkin = profile.activeSkin(isPlusUnlocked: entitlement.isPlusUnlocked) }
     }
@@ -44,7 +46,8 @@ struct SkinGalleryView: View {
                     SkinCard(
                         skin: skin,
                         selected: profile.selectedSkin == skin,
-                        unlocked: isUnlocked(skin)
+                        unlocked: isUnlocked(skin),
+                        language: language
                     )
                 }
                 .buttonStyle(.plain)
@@ -53,7 +56,7 @@ struct SkinGalleryView: View {
     }
 
     private var balanceChip: some View {
-        Label("\(profile.gemBalance) gem", systemImage: "diamond.fill")
+        Label("\(profile.gemBalance) \(language.text("skin.gems"))", systemImage: "diamond.fill")
             .font(.subheadline.monospacedDigit().weight(.semibold))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
@@ -121,6 +124,7 @@ private struct SkinCard: View {
     let skin: GameSkin
     let selected: Bool
     let unlocked: Bool
+    let language: AppLanguage
 
     var body: some View {
         let palette = skin.palette
@@ -129,7 +133,7 @@ private struct SkinCard: View {
             Text(skin.title)
                 .font(.subheadline.weight(.semibold))
             HStack {
-                Text(skin.subtitle)
+                Text(language.text(skinDetailKey))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -169,8 +173,19 @@ private struct SkinCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
+    private var skinDetailKey: String {
+        switch skin {
+        case .classic: "skin.classic.detail"
+        case .nebula: "skin.nebula.detail"
+        case .aurora: "skin.aurora.detail"
+        case .solar: "skin.solar.detail"
+        case .obsidian: "skin.obsidian.detail"
+        case .frozenQuartz: "skin.frozen.detail"
+        }
+    }
+
     private var accessLabel: String {
-        guard !unlocked else { return "ĐÃ MỞ" }
+        guard !unlocked else { return language.text("skin.unlocked") }
         switch skin.access {
         case .free:
             return "FREE"

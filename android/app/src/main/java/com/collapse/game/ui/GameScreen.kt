@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.collapse.game.R
 import com.collapse.game.domain.FeedbackKind
 import com.collapse.game.domain.FuturePath
 import com.collapse.game.domain.GameController
@@ -57,6 +59,7 @@ import com.collapse.game.domain.GamePhase
 import com.collapse.game.domain.GamePoint
 import com.collapse.game.domain.GameState
 import com.collapse.game.domain.TimelineBranch
+import com.collapse.game.services.PlayGamesStore
 import com.collapse.game.services.PlayerProfile
 import com.collapse.game.services.SensoryEngine
 import kotlinx.coroutines.isActive
@@ -68,6 +71,7 @@ import kotlin.math.sin
 fun GameScreen(
     profile: PlayerProfile,
     sensory: SensoryEngine,
+    playGames: PlayGamesStore,
     mode: GameMode,
     isPlusUnlocked: Boolean,
     onHome: () -> Unit
@@ -87,7 +91,8 @@ fun GameScreen(
 
     LaunchedEffect(controller.state) {
         if (controller.state != GameState.GameOver || recordedGameOver) return@LaunchedEffect
-        profile.record(controller.score, controller.economy.gems)
+        profile.record(controller.score, controller.economy.gems, mode)
+        playGames.submit(controller.score, mode)
         recordedGameOver = true
     }
 
@@ -176,12 +181,12 @@ private fun GameHud(controller: GameController, profile: PlayerProfile, skin: Ga
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     CollapseBrandMark(skin.palette.primary, subtitle = "", compact = true)
                     Text(controller.mode.title, color = Color.White.copy(alpha = 0.48f), fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
-                    Text("◉ DỰ BÁO ${"%.1f".format(controller.choiceDurationSeconds)}s", color = skin.palette.primary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp)
-                    Text("🔥 ${profile.dailyRunStreak} ngày  ·  ◆ ${profile.gemBalance + controller.economy.gems}", color = Color.White.copy(alpha = 0.62f), fontSize = 10.sp)
+                    Text("◉ ${stringResource(R.string.game_forecast)} ${"%.1f".format(controller.choiceDurationSeconds)}s", color = skin.palette.primary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp)
+                    Text("🔥 ${profile.dailyRunStreak}  ·  ◆ ${profile.gemBalance + controller.economy.gems}", color = Color.White.copy(alpha = 0.62f), fontSize = 10.sp)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(controller.score.toString(), color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.SemiBold)
-                    Text("ĐIỂM", color = Color.White.copy(alpha = 0.46f), fontSize = 9.sp, letterSpacing = 1.6.sp)
+                    Text(stringResource(R.string.game_score), color = Color.White.copy(alpha = 0.46f), fontSize = 9.sp, letterSpacing = 1.6.sp)
                 }
                 Spacer(Modifier.size(8.dp))
                 IconButton(
@@ -203,7 +208,7 @@ private fun GameHud(controller: GameController, profile: PlayerProfile, skin: Ga
         if (controller.phase == GamePhase.Choosing && controller.state == GameState.Playing) {
             GlassSurface(Modifier.align(Alignment.CenterHorizontally), radius = 99.dp) {
                 Text(
-                    "●  CHẠM ĐỂ ĐỔI TƯƠNG LAI",
+                    "●  ${stringResource(R.string.game_tap)}",
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     color = if (controller.guidanceQuality > 0.5) Color(0xFF62F58D) else Color(0xFFFF5D67),
                     fontSize = 10.sp,
@@ -249,13 +254,13 @@ private fun PauseOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                CollapseBrandMark(skin.palette.primary, subtitle = "TẠM DỪNG", compact = true)
+                CollapseBrandMark(skin.palette.primary, subtitle = stringResource(R.string.game_pause_title), compact = true)
                 Button(onClick = onResume, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = skin.palette.primary)) {
-                    Text("TIẾP TỤC", color = Color.Black)
+                    Text(stringResource(R.string.game_resume), color = Color.Black)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = onRestart, modifier = Modifier.weight(1f)) { Text("CHƠI LẠI") }
-                    OutlinedButton(onClick = onHome, modifier = Modifier.weight(1f)) { Text("VỀ TRANG CHỦ") }
+                    OutlinedButton(onClick = onRestart, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.game_restart)) }
+                    OutlinedButton(onClick = onHome, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.game_home)) }
                 }
             }
         }
@@ -277,17 +282,17 @@ private fun GameOverOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(13.dp)
             ) {
-                CollapseBrandMark(skin.palette.danger, subtitle = "DÒNG THỜI GIAN ĐÃ VỠ", compact = true)
-                Text("Dự báo đã cho thấy tương lai này đi xuyên vùng đỏ.", color = Color.White.copy(alpha = 0.56f), textAlign = TextAlign.Center, fontSize = 14.sp)
+                CollapseBrandMark(skin.palette.danger, subtitle = stringResource(R.string.game_over_title), compact = true)
+                Text(stringResource(R.string.game_over_message), color = Color.White.copy(alpha = 0.56f), textAlign = TextAlign.Center, fontSize = 14.sp)
                 Row(Modifier.fillMaxWidth()) {
-                    MetricBlock("ĐIỂM", controller.score.toString(), Modifier.weight(1f))
-                    MetricBlock("GEM", "+${controller.economy.gems}", Modifier.weight(1f))
-                    MetricBlock("KỶ LỤC", maxOf(profile.bestScore, controller.score).toString(), Modifier.weight(1f))
+                    MetricBlock(stringResource(R.string.game_score), controller.score.toString(), Modifier.weight(1f))
+                    MetricBlock(stringResource(R.string.game_gem), "+${controller.economy.gems}", Modifier.weight(1f))
+                    MetricBlock(stringResource(R.string.game_best), maxOf(profile.bestScore(controller.mode), controller.score).toString(), Modifier.weight(1f))
                 }
                 Button(onClick = onRestart, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = skin.palette.primary)) {
-                    Text("CHƠI LẠI", color = Color.Black)
+                    Text(stringResource(R.string.game_restart), color = Color.Black)
                 }
-                OutlinedButton(onClick = onHome, modifier = Modifier.fillMaxWidth()) { Text("VỀ TRANG CHỦ") }
+                OutlinedButton(onClick = onHome, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.game_home)) }
             }
         }
     }

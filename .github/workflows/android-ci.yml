@@ -24,6 +24,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check localization keys
+        run: python3 scripts/check_localization.py
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:

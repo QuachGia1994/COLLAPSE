@@ -15,9 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.collapse.game.R
 
 @Composable
 fun StartupScreen() {
@@ -52,7 +54,7 @@ fun StartupScreen() {
                 letterSpacing = 7.sp
             )
             Text(
-                "CHỌN TƯƠNG LAI",
+                stringResource(R.string.brand_subtitle),
                 modifier = Modifier.padding(top = 2.dp),
                 color = Color.White.copy(alpha = 0.50f),
                 fontSize = 11.sp,

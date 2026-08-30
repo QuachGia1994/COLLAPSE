@@ -8,6 +8,7 @@ struct GameView: View {
     @Environment(EntitlementStore.self) private var entitlement
     @Environment(SensoryEngine.self) private var sensory
     @Environment(RunActivityController.self) private var runActivity
+    @Environment(GameCenterStore.self) private var gameCenter
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
     @State private var engine: GameEngine
@@ -41,6 +42,8 @@ struct GameView: View {
         .onDisappear { handleDisappear() }
     }
 
+    private var language: AppLanguage { profile.selectedLanguage }
+
     private var activeSkin: GameSkin {
         profile.activeSkin(isPlusUnlocked: entitlement.isPlusUnlocked)
     }
@@ -63,10 +66,10 @@ struct GameView: View {
                     .font(.caption2.weight(.semibold))
                     .tracking(1.5)
                     .foregroundStyle(.secondary)
-                Label("DỰ BÁO \(engine.choiceDuration, format: .number.precision(.fractionLength(1)))s", systemImage: "eye")
+                Label("\(language.text("game.forecast")) \(engine.choiceDuration, format: .number.precision(.fractionLength(1)))s", systemImage: "eye")
                     .font(.caption2.monospaced().weight(.semibold))
                     .foregroundStyle(activeSkin.palette.primary)
-                Text("🔥 \(profile.dailyRunStreak) ngày  ·  ◆ \(profile.gemBalance + engine.economy.gems)")
+                Text("🔥 \(profile.dailyRunStreak)  ·  ◆ \(profile.gemBalance + engine.economy.gems)")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.white.opacity(0.64))
             }
@@ -84,7 +87,7 @@ struct GameView: View {
             Text("\(engine.score)")
                 .font(.system(size: 34, weight: .semibold, design: .rounded))
                 .monospacedDigit()
-            Text("ĐIỂM")
+            Text(language.text("game.score"))
                 .font(.caption2)
                 .tracking(1.6)
                 .foregroundStyle(.secondary)
@@ -105,7 +108,7 @@ struct GameView: View {
         .frame(width: 48, height: 48, alignment: .center)
         .opacity(engine.state == .playing && engine.phase != .ready ? 1 : 0)
         .disabled(engine.state != .playing || engine.phase == .ready)
-        .accessibilityLabel("Tạm dừng")
+        .accessibilityLabel(language.text("game.pause"))
         .accessibilityIdentifier("game.pause")
     }
 
@@ -133,7 +136,7 @@ struct GameView: View {
             Circle()
                 .fill(engine.guidanceQuality > 0.5 ? Color.green : Color.red)
                 .frame(width: 7, height: 7)
-            Text("CHẠM ĐỂ ĐỔI TƯƠNG LAI")
+            Text(language.text("game.tap"))
         }
         .font(.caption.weight(.semibold))
         .tracking(1.3)
@@ -154,17 +157,17 @@ struct GameView: View {
 
     private var pauseCard: some View {
         VStack(spacing: 16) {
-            CollapseBrandMark(tint: activeSkin.palette.primary, subtitle: "TẠM DỪNG", compact: true)
-            Button("TIẾP TỤC") { engine.resume() }
+            CollapseBrandMark(tint: activeSkin.palette.primary, subtitle: language.text("game.pause.title"), compact: true)
+            Button(language.text("game.resume")) { engine.resume() }
                 .buttonStyle(.borderedProminent)
                 .tint(activeSkin.palette.primary)
                 .controlSize(.large)
                 .accessibilityIdentifier("game.resume")
             HStack(spacing: 10) {
-                Button("CHƠI LẠI") { restartRun() }
+                Button(language.text("game.restart")) { restartRun() }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("game.pause.restart")
-                Button("VỀ TRANG CHỦ") { leaveGame() }
+                Button(language.text("game.home")) { leaveGame() }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("game.pause.home")
             }
@@ -178,27 +181,27 @@ struct GameView: View {
 
     private var deathCard: some View {
         VStack(spacing: 15) {
-            CollapseBrandMark(tint: activeSkin.palette.danger, subtitle: "DÒNG THỜI GIAN ĐÃ VỠ", compact: true)
-            Text("Dự báo đã cho thấy tương lai này đi xuyên vùng đỏ.")
+            CollapseBrandMark(tint: activeSkin.palette.danger, subtitle: language.text("game.over.title"), compact: true)
+            Text(language.text("game.over.message"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: 18) {
-                stat("ĐIỂM", value: "\(engine.score)")
-                stat("GEM", value: "+\(engine.economy.gems)")
-                stat("KỶ LỤC", value: "\(max(profile.bestScore, engine.score))")
+                stat(language.text("game.score"), value: "\(engine.score)")
+                stat(language.text("game.gem"), value: "+\(engine.economy.gems)")
+                stat(language.text("game.best"), value: "\(max(profile.bestScore(for: mode), engine.score))")
             }
             if isFinalizingRun {
-                ProgressView("Đang lưu lượt chơi…")
+                ProgressView(language.text("game.saving"))
                     .font(.caption)
             }
-            Button("CHƠI LẠI") { restartRun() }
+            Button(language.text("game.restart")) { restartRun() }
                 .buttonStyle(.borderedProminent)
                 .tint(activeSkin.palette.primary)
                 .controlSize(.large)
                 .disabled(isFinalizingRun)
                 .accessibilityIdentifier("game.over.restart")
-            Button("VỀ TRANG CHỦ") { leaveGame() }
+            Button(language.text("game.home")) { leaveGame() }
                 .buttonStyle(.bordered)
                 .disabled(isFinalizingRun)
                 .accessibilityIdentifier("game.over.home")
@@ -234,8 +237,8 @@ struct GameView: View {
         await runActivity.start(
             score: engine.score,
             streak: profile.dailyRunStreak,
-            bestScore: max(profile.bestScore, engine.score),
-            localRank: profile.localRank(for: engine.score)
+            bestScore: max(profile.bestScore(for: mode), engine.score),
+            localRank: profile.localRank(for: engine.score, mode: mode)
         )
     }
 
@@ -246,9 +249,9 @@ struct GameView: View {
             if runActivity.isActive {
                 await runActivity.update(
                     score: score,
-                    bestScore: max(profile.bestScore, score),
+                    bestScore: max(profile.bestScore(for: mode), score),
                     streak: profile.dailyRunStreak,
-                    localRank: profile.localRank(for: score),
+                    localRank: profile.localRank(for: score, mode: mode),
                     status: .playing
                 )
                 return
@@ -275,9 +278,9 @@ struct GameView: View {
         Task {
             await runActivity.update(
                 score: engine.score,
-                bestScore: max(profile.bestScore, engine.score),
+                bestScore: max(profile.bestScore(for: mode), engine.score),
                 streak: profile.dailyRunStreak,
-                localRank: profile.localRank(for: engine.score),
+                localRank: profile.localRank(for: engine.score, mode: mode),
                 status: .paused
             )
         }
@@ -289,7 +292,8 @@ struct GameView: View {
         Task {
             await endLiveActivity()
             if mode.isCompetitive {
-                await profile.record(score: engine.score, gemsEarned: engine.economy.gems)
+                await profile.record(score: engine.score, gemsEarned: engine.economy.gems, mode: mode)
+                await gameCenter.submit(score: engine.score, mode: mode)
             }
             isFinalizingRun = false
         }
@@ -346,9 +350,9 @@ struct GameView: View {
     private func endLiveActivity() async {
         await runActivity.end(
             score: engine.score,
-            bestScore: max(profile.bestScore, engine.score),
+            bestScore: max(profile.bestScore(for: mode), engine.score),
             streak: profile.dailyRunStreak,
-            localRank: profile.localRank(for: engine.score)
+            localRank: profile.localRank(for: engine.score, mode: mode)
         )
     }
 

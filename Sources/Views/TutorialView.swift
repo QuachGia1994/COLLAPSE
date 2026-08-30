@@ -9,11 +9,15 @@ struct TutorialView: View {
 
     let isReplay: Bool
 
-    private let items = [
-        TutorialItem(title: "Nhìn 2 tương lai", detail: "Hai đường cho biết trước kết quả. Tìm nhánh tránh vùng đỏ.", symbol: "eye"),
-        TutorialItem(title: "Chạm để đổi nhánh", detail: "Chạm vào vùng chơi để đổi lựa chọn. Không cần vuốt hay giữ.", symbol: "hand.tap"),
-        TutorialItem(title: "Chốt lựa chọn", detail: "Hết thời gian, nhánh đã chọn thành hiện thực và nhánh còn lại vỡ.", symbol: "checkmark.circle")
-    ]
+    private var language: AppLanguage { profile.selectedLanguage }
+
+    private var items: [TutorialItem] {
+        [
+            TutorialItem(title: language.text("tutorial.step1.title"), detail: language.text("tutorial.step1.detail"), symbol: "eye"),
+            TutorialItem(title: language.text("tutorial.step2.title"), detail: language.text("tutorial.step2.detail"), symbol: "hand.tap"),
+            TutorialItem(title: language.text("tutorial.step3.title"), detail: language.text("tutorial.step3.detail"), symbol: "checkmark.circle")
+        ]
+    }
 
     init(isReplay: Bool = false) {
         self.isReplay = isReplay
@@ -41,9 +45,9 @@ struct TutorialView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            CollapseBrandMark(tint: .cyan, subtitle: "CÁCH CHƠI", compact: true)
+            CollapseBrandMark(tint: .cyan, subtitle: language.text("tutorial.subtitle"), compact: true)
             Spacer()
-            Button(isReplay ? "Đóng" : "Bỏ qua") { finishTutorial() }
+            Button(isReplay ? language.text("tutorial.close") : language.text("tutorial.skip")) { finishTutorial() }
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
                 .accessibilityIdentifier("tutorial.close")
@@ -71,7 +75,7 @@ struct TutorialView: View {
             Image(systemName: items[step].symbol)
                 .font(.title2)
                 .foregroundStyle(.cyan)
-            Text("BƯỚC \(step + 1)")
+            Text("\(language.text("tutorial.step")) \(step + 1)")
                 .font(.caption.weight(.semibold))
                 .tracking(2)
                 .foregroundStyle(.cyan)
@@ -110,8 +114,8 @@ struct TutorialView: View {
     }
 
     private var primaryActionTitle: String {
-        guard step == items.count - 1 else { return "TIẾP" }
-        return isReplay ? "XONG" : "BẮT ĐẦU"
+        guard step == items.count - 1 else { return language.text("tutorial.next") }
+        return isReplay ? language.text("tutorial.done") : language.text("tutorial.start")
     }
 
     private var background: some View {

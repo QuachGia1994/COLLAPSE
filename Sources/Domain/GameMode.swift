@@ -19,14 +19,8 @@ enum GameMode: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var subtitle: String {
-        switch self {
-        case .classic: "Nhịp cân bằng nguyên bản."
-        case .rush: "Quyết định nhanh, chuyển động nhanh."
-        case .precision: "Chỉ một lần đổi nhánh mỗi round."
-        case .daily: "Một timeline cố định cho mỗi ngày."
-        case .zen: "Practice chậm, va chạm không kết thúc run."
-        }
+    func subtitle(language: AppLanguage) -> String {
+        language.text("mode.\(rawValue).detail")
     }
 
     var choiceBase: Double {
@@ -104,6 +98,16 @@ enum GameMode: String, CaseIterable, Identifiable, Sendable {
 
     var collisionEndsRun: Bool { self != .zen }
     var isCompetitive: Bool { self != .zen }
+
+    var gameCenterLeaderboardID: String? {
+        switch self {
+        case .classic: "collapse.classic.best"
+        case .rush: "collapse.rush.best"
+        case .precision: "collapse.precision.best"
+        case .daily: "collapse.daily.best"
+        case .zen: nil
+        }
+    }
 
     func seed(on date: Date = .now, calendar: Calendar = .current) -> UInt64 {
         guard self == .daily else { return 0xC011A953 }

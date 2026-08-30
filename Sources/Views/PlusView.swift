@@ -4,15 +4,20 @@ import SwiftUI
 @MainActor
 struct PlusView: View {
     @Environment(EntitlementStore.self) private var entitlement
+    @Environment(PlayerProfile.self) private var profile
     @Environment(\.dismiss) private var dismiss
 
-    private let benefits = [
-        ("rectangle.slash", "Tắt quảng cáo"),
-        ("sparkles", "Theme và pulse Plus riêng"),
-        ("bolt.horizontal.circle", "Vào sớm level và mode mới"),
-        ("waveform", "Soundscape và haptic Plus"),
-        ("shield.checkered", "Không tăng điểm hay lợi thế sống sót")
-    ]
+    private var language: AppLanguage { profile.selectedLanguage }
+
+    private var benefits: [(String, String)] {
+        [
+            ("rectangle.slash", language.text("plus.noads")),
+            ("sparkles", language.text("plus.themes")),
+            ("bolt.horizontal.circle", language.text("plus.early")),
+            ("waveform", language.text("plus.sound")),
+            ("shield.checkered", language.text("plus.fair"))
+        ]
+    }
 
     var body: some View {
         NavigationStack {
@@ -29,7 +34,7 @@ struct PlusView: View {
             .background(background)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Đóng") { dismiss() }
+                    Button(language.text("plus.close")) { dismiss() }
                 }
             }
         }
@@ -38,10 +43,10 @@ struct PlusView: View {
 
     private var titleBlock: some View {
         VStack(spacing: 5) {
-            Text("COLLAPSE PLUS")
+            Text(language.text("plus.title"))
                 .font(.title.weight(.semibold))
                 .tracking(3)
-            Text("Đăng ký tuần hoặc tháng. Hủy bất kỳ lúc nào trong App Store.")
+            Text(language.text("plus.description"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -80,7 +85,7 @@ struct PlusView: View {
                 .padding(.vertical, 12)
                 .background(.thinMaterial, in: Capsule())
         } else if entitlement.isLoadingProducts {
-            ProgressView("Đang tải gói Plus…")
+            ProgressView(language.text("plus.loading"))
                 .padding(16)
                 .background(.thinMaterial, in: Capsule())
         } else {
@@ -89,14 +94,14 @@ struct PlusView: View {
                     purchaseButton(product)
                 }
 
-                Button("Khôi phục giao dịch") {
+                Button(language.text("plus.restore")) {
                     Task { await entitlement.restorePurchases() }
                 }
                 .font(.footnote)
                 .disabled(entitlement.isPurchasing)
 
                 if entitlement.products.isEmpty {
-                    Button("Tải lại gói Plus") {
+                    Button(language.text("plus.reload")) {
                         Task { await entitlement.refresh() }
                     }
                     .font(.footnote)
@@ -141,7 +146,7 @@ struct PlusView: View {
     }
 
     private var fairnessNote: some View {
-        Text("Plus chỉ thay đổi quảng cáo, theme/pulse và quyền truy cập sớm. Hazard, thời gian quyết định, điểm và khả năng sống sót giống hệt Free.")
+        Text(language.text("plus.fairness"))
             .font(.caption)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -181,11 +186,11 @@ struct PlusView: View {
     }
 
     private var activePlanLabel: String {
-        guard let activeProductID = entitlement.activeProductID else { return "PLUS ĐANG HOẠT ĐỘNG" }
-        return "PLUS \(planName(activeProductID).uppercased()) ĐANG HOẠT ĐỘNG"
+        guard let activeProductID = entitlement.activeProductID else { return language.text("plus.active") }
+        return "\(language.text("plus.active")) · \(planName(activeProductID))"
     }
 
     private func planName(_ productID: String) -> String {
-        productID == EntitlementStore.weeklyProductID ? "Hàng tuần" : "Hàng tháng"
+        productID == EntitlementStore.weeklyProductID ? language.text("plus.plan.weekly") : language.text("plus.plan.monthly")
     }
 }

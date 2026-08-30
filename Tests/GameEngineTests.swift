@@ -181,16 +181,22 @@ final class GameEngineTests: XCTestCase {
         profile.registerRunStart(now: nextDay, calendar: calendar)
         XCTAssertEqual(profile.dailyRunStreak, 2)
 
-        await profile.record(score: 4, gemsEarned: 10)
-        await profile.record(score: 9, gemsEarned: 10)
-        await profile.record(score: 6, gemsEarned: 10)
-        XCTAssertEqual(profile.topScores, [9, 6, 4])
-        XCTAssertEqual(profile.localRank(for: 7), 2)
+        await profile.record(score: 4, gemsEarned: 10, mode: .daily)
+        await profile.record(score: 9, gemsEarned: 10, mode: .daily)
+        await profile.record(score: 6, gemsEarned: 10, mode: .daily)
+        await profile.record(score: 3, gemsEarned: 0, mode: .rush)
+        XCTAssertEqual(profile.topScores(for: .daily), [9, 6, 4])
+        XCTAssertEqual(profile.bestScore(for: .daily), 9)
+        XCTAssertEqual(profile.bestScore(for: .rush), 3)
+        XCTAssertEqual(profile.localRank(for: 7, mode: .daily), 2)
         XCTAssertEqual(profile.gemBalance, 30)
         XCTAssertTrue(profile.unlock(.aurora))
         XCTAssertEqual(profile.gemBalance, 5)
         XCTAssertTrue(profile.isUnlocked(.aurora, isPlusUnlocked: false))
-        XCTAssertEqual(PlayerProfile(defaults: defaults).selectedMode, .daily)
+        let restored = PlayerProfile(defaults: defaults)
+        XCTAssertEqual(restored.selectedMode, .daily)
+        XCTAssertEqual(restored.bestScore(for: .daily), 9)
+        XCTAssertEqual(restored.bestScore(for: .rush), 3)
     }
 
     @MainActor

@@ -40,19 +40,15 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.collapse.game.R
 import com.collapse.game.domain.TimelineBranch
 
 private data class TutorialItem(val title: String, val detail: String, val cue: String)
-
-private val tutorialItems = listOf(
-    TutorialItem("Nhìn 2 tương lai", "Hai đường cho biết trước kết quả. Tìm nhánh tránh vùng đỏ.", "◉"),
-    TutorialItem("Chạm để đổi nhánh", "Mỗi lần chạm đổi lựa chọn. Không cần vuốt hay giữ.", "☝"),
-    TutorialItem("Chốt lựa chọn", "Hết thời gian, nhánh đã chọn thành hiện thực. Nhánh còn lại vỡ.", "✓")
-)
 
 @Composable
 fun TutorialScreen(
@@ -62,7 +58,12 @@ fun TutorialScreen(
 ) {
     var step by remember { mutableIntStateOf(0) }
     var selectedBranch by remember { mutableStateOf(TimelineBranch.Cyan) }
-    val item = tutorialItems[step]
+    val items = listOf(
+        TutorialItem(stringResource(R.string.tutorial_step1_title), stringResource(R.string.tutorial_step1_detail), "◉"),
+        TutorialItem(stringResource(R.string.tutorial_step2_title), stringResource(R.string.tutorial_step2_detail), "☝"),
+        TutorialItem(stringResource(R.string.tutorial_step3_title), stringResource(R.string.tutorial_step3_detail), "✓")
+    )
+    val item = items[step]
 
     BoxWithConstraints(
         Modifier
@@ -100,7 +101,7 @@ fun TutorialScreen(
                     verticalArrangement = Arrangement.spacedBy(if (compactHeight) 5.dp else 8.dp)
                 ) {
                     Text(item.cue, color = CollapseCyan, fontSize = if (compactHeight) 26.sp else 32.sp)
-                    Text("BƯỚC ${step + 1}", color = CollapseCyan, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
+                    Text("${stringResource(R.string.tutorial_step)} ${step + 1}", color = CollapseCyan, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
                     Text(item.title, color = Color.White, fontSize = if (compactHeight) 21.sp else 24.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                     Text(item.detail, color = Color.White.copy(alpha = 0.52f), fontSize = if (compactHeight) 13.sp else 15.sp, textAlign = TextAlign.Center)
                 }
@@ -110,16 +111,16 @@ fun TutorialScreen(
             Spacer(Modifier.height(if (compactHeight) 10.dp else 16.dp))
             Button(
                 onClick = {
-                    if (step == tutorialItems.lastIndex) onFinished() else step += 1
+                    if (step == items.lastIndex) onFinished() else step += 1
                 },
                 modifier = Modifier.fillMaxWidth().height(if (compactHeight) 50.dp else 54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = CollapseCyan),
                 shape = RoundedCornerShape(27.dp)
             ) {
                 val title = when {
-                    step != tutorialItems.lastIndex -> "TIẾP"
-                    isReplay -> "XONG"
-                    else -> "BẮT ĐẦU"
+                    step != items.lastIndex -> stringResource(R.string.tutorial_next)
+                    isReplay -> stringResource(R.string.tutorial_done)
+                    else -> stringResource(R.string.tutorial_start)
                 }
                 Text(title, color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
@@ -141,12 +142,12 @@ private fun TutorialHeader(
     ) {
         CollapseBrandMark(
             tint = CollapseCyan,
-            subtitle = "CÁCH CHƠI",
+            subtitle = stringResource(R.string.tutorial_subtitle),
             compact = true,
             modifier = Modifier.weight(1f)
         )
         TextButton(onClick = if (isReplay) onClose else onFinished) {
-            Text(if (isReplay) "Đóng" else "Bỏ qua", color = Color.White, fontSize = 14.sp)
+            Text(if (isReplay) stringResource(R.string.tutorial_close) else stringResource(R.string.tutorial_skip), color = Color.White, fontSize = 14.sp)
         }
     }
 }
@@ -154,7 +155,7 @@ private fun TutorialHeader(
 @Composable
 private fun StepDots(step: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        tutorialItems.indices.forEach { index ->
+        repeat(3) { index ->
             Box(
                 Modifier
                     .size(width = if (index == step) 24.dp else 8.dp, height = 8.dp)

@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Added
+- Mode-scoped best/today/top-score persistence so CLASSIC/RUSH/PRECISION/DAILY records are no longer mixed together; streak and gem balance remain account-wide.
+- Game Center leaderboards on iOS and Play Games Services v2 leaderboards on Android, with per-mode IDs, remote rank display, offline score queue, and retry on reconnect; Zen stays local-only.
+- EN/VI/JA/zh-Hans in-app language switching, localized Home/game/tutorial/Plus/skin surfaces, and CI localization key parity checks on both platforms.
+- Always-visible tutorial access in the Home action card plus a header `?` shortcut, so How to Play never depends on scrolling to the bottom.
 - SwiftUI application shell for COLLAPSE.
 - Deterministic two-future one-tap game engine with visible hazard prediction, timed commit, timeline collapse, scoring, and death/restart.
 - Three-step first-run tutorial matching the core concept: see futures, tap to switch, commit the choice.

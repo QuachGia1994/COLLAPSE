@@ -20,6 +20,11 @@ The game never hides the outcome that matters to the current decision. Every run
 
 Mode rules are centralized in `GameMode` on both platforms; they do not fork the core two-future mechanic.
 
+## Progression, stats, language, and leaderboards
+- Best score, daily best, and local top-three scores are stored separately for CLASSIC/RUSH/PRECISION/DAILY. Streak and gem balance are intentionally account-wide; Zen is practice-only and excluded from competitive persistence.
+- iOS uses Game Center leaderboards `collapse.classic.best`, `collapse.rush.best`, `collapse.precision.best`, and `collapse.daily.best`. Android uses Play Games leaderboard IDs supplied through Gradle properties. Both queue the highest unsent score per mode and retry after authentication/reconnect.
+- Home exposes an always-visible language control for EN/VI/JA/zh-Hans and a header `?` shortcut plus in-card How to Play action. CI rejects missing locale keys or Unicode replacement characters.
+
 ## iOS runtime
 - `GameEngine`: `@MainActor @Observable` owner for startup countdown, ready/playing/paused/game-over state, selected `GameMode`, deterministic rounds, timing, collision, score, run gems, and transient feedback.
 - `GameBoardView`: pure SwiftUI `TimelineView(.animation(minimumInterval: 1.0 / 60.0))` + `Canvas` loop.

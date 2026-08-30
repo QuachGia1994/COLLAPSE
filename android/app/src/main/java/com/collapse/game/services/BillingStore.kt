@@ -21,6 +21,19 @@ private const val WEEKLY_PRODUCT_ID = "collapse.plus.weekly"
 private const val MONTHLY_PRODUCT_ID = "collapse.plus.monthly"
 private val PLUS_PRODUCT_IDS = setOf(WEEKLY_PRODUCT_ID, MONTHLY_PRODUCT_ID)
 
+enum class BillingStatus {
+    Connecting,
+    Loading,
+    Ready,
+    Active,
+    Pending,
+    None,
+    Unavailable,
+    Error,
+    Cancelled,
+    Restoring
+}
+
 data class PlaySubscriptionPlan(
     val productId: String,
     val title: String,
@@ -49,7 +62,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
         private set
     var isConnecting by mutableStateOf(false)
         private set
-    var statusMessage by mutableStateOf("Đang kết nối Google Play…")
+    var status by mutableStateOf(BillingStatus.Connecting)
         private set
 
     init {
@@ -59,23 +72,23 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
     override fun onBillingSetupFinished(result: BillingResult) {
         isConnecting = false
         if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            statusMessage = "Không kết nối được Google Play. Hãy thử lại khi có Play Store."
+            status = BillingStatus.Unavailable
             return
         }
-        statusMessage = "Đang tải gói Plus…"
+        status = BillingStatus.Loading
         refresh()
     }
 
     override fun onBillingServiceDisconnected() {
         isConnecting = false
-        statusMessage = "Google Play tạm ngắt kết nối."
+        status = BillingStatus.Unavailable
     }
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
         when (result.responseCode) {
             BillingClient.BillingResponseCode.OK -> reconcilePurchases(purchases.orEmpty())
-            BillingClient.BillingResponseCode.USER_CANCELED -> statusMessage = "Đã hủy thanh toán."
-            else -> statusMessage = result.debugMessage.ifBlank { "Không thể hoàn tất thanh toán." }
+            BillingClient.BillingResponseCode.USER_CANCELED -> status = BillingStatus.Cancelled
+            else -> status = BillingStatus.Error
         }
     }
 
@@ -89,7 +102,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
         guardReady { return }
         val details = productDetails[productId]
         if (details == null) {
-            statusMessage = "Gói này chưa khả dụng từ Google Play."
+            status = BillingStatus.Unavailable
             queryPlans()
             return
         }
@@ -98,7 +111,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
 
     fun restore() {
         guardReady { return }
-        statusMessage = "Đang kiểm tra giao dịch…"
+        status = BillingStatus.Restoring
         queryPurchases()
     }
 
@@ -116,7 +129,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
         val params = QueryProductDetailsParams.newBuilder().setProductList(products).build()
         billingClient.queryProductDetailsAsync(params) { result, queryResult ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                statusMessage = "Không tải được giá từ Google Play."
+                status = BillingStatus.Error
                 return@queryProductDetailsAsync
             }
             applyProductDetails(queryResult.productDetailsList)
@@ -128,10 +141,10 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
         details.forEach { productDetails[it.productId] = it }
         weeklyPlan = details.firstOrNull { it.productId == WEEKLY_PRODUCT_ID }?.toPlan("HÀNG TUẦN")
         monthlyPlan = details.firstOrNull { it.productId == MONTHLY_PRODUCT_ID }?.toPlan("HÀNG THÁNG")
-        statusMessage = when {
-            isPlusUnlocked -> "COLLAPSE Plus đang hoạt động."
-            weeklyPlan == null && monthlyPlan == null -> "Gói Plus chưa khả dụng trong bản cài này. Dùng Google Play Internal Testing để mua thử."
-            else -> "Chọn gói để tiếp tục trên Google Play."
+        status = when {
+            isPlusUnlocked -> BillingStatus.Active
+            weeklyPlan == null && monthlyPlan == null -> BillingStatus.Unavailable
+            else -> BillingStatus.Ready
         }
     }
 
@@ -141,7 +154,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
             .build()
         billingClient.queryPurchasesAsync(params) { result, purchases ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                statusMessage = "Không kiểm tra được giao dịch Google Play."
+                status = BillingStatus.Error
                 return@queryPurchasesAsync
             }
             reconcilePurchases(purchases)
@@ -155,10 +168,10 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
         val active = plusPurchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
         isPlusUnlocked = active.isNotEmpty()
         active.filterNot { it.isAcknowledged }.forEach(::acknowledge)
-        statusMessage = when {
-            isPlusUnlocked -> "COLLAPSE Plus đang hoạt động."
-            plusPurchases.any { it.purchaseState == Purchase.PurchaseState.PENDING } -> "Thanh toán đang chờ Google Play xác nhận."
-            else -> "Chưa có gói Plus đang hoạt động."
+        status = when {
+            isPlusUnlocked -> BillingStatus.Active
+            plusPurchases.any { it.purchaseState == Purchase.PurchaseState.PENDING } -> BillingStatus.Pending
+            else -> BillingStatus.None
         }
     }
 
@@ -168,7 +181,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
             .build()
         billingClient.acknowledgePurchase(params) { result ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                statusMessage = "Plus đã mua nhưng chưa xác nhận được với Google Play."
+                status = BillingStatus.Error
             }
         }
     }
@@ -176,7 +189,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
     private fun launchPurchase(activity: Activity, details: ProductDetails) {
         val offer = details.subscriptionOfferDetails?.firstOrNull()
         if (offer == null) {
-            statusMessage = "Gói chưa có base plan/offer khả dụng."
+            status = BillingStatus.Unavailable
             return
         }
         val product = BillingFlowParams.ProductDetailsParams.newBuilder()
@@ -188,7 +201,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
             .build()
         val result = billingClient.launchBillingFlow(activity, params)
         if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            statusMessage = result.debugMessage.ifBlank { "Không mở được Google Play checkout." }
+            status = BillingStatus.Error
         }
     }
 
@@ -206,7 +219,7 @@ class BillingStore(context: Context) : PurchasesUpdatedListener, BillingClientSt
     private fun connect() {
         if (billingClient.isReady || isConnecting) return
         isConnecting = true
-        statusMessage = "Đang kết nối Google Play…"
+        status = BillingStatus.Connecting
         billingClient.startConnection(this)
     }
 

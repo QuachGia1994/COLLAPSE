@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct StartupView: View {
+    @Environment(PlayerProfile.self) private var profile
+
     var body: some View {
         ZStack {
             RadialGradient(
@@ -22,7 +24,7 @@ struct StartupView: View {
                     Text("COLLAPSE")
                         .font(.system(size: 32, weight: .light, design: .rounded))
                         .tracking(8)
-                    Text("CHỌN TƯƠNG LAI")
+                    Text(profile.selectedLanguage.text("brand.subtitle"))
                         .font(.caption.weight(.semibold))
                         .tracking(3)
                         .foregroundStyle(.secondary)
