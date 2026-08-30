@@ -15,6 +15,7 @@
 "home.rank.gamecenter" = "GAME CENTER #%d";
 "home.rank.playgames" = "PLAY GAMES #%d";
 "home.rank.offline" = "CHƯA KẾT NỐI BẢNG XẾP HẠNG";
+"home.rank.zen" = "ZEN · LOCAL";
 "home.rank.connect" = "KẾT NỐI";
 "home.language" = "NGÔN NGỮ";
 "mode.classic.detail" = "Nhịp cân bằng nguyên bản.";

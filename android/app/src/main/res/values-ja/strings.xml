@@ -16,6 +16,7 @@
     <string name="home_rank_local">ローカル #%1$d</string>
     <string name="home_rank_play_games">PLAY GAMES #%1$d</string>
     <string name="home_rank_offline">ランキング未接続</string>
+    <string name="home_rank_zen">ZEN · ローカル</string>
     <string name="home_rank_connect">接続</string>
     <string name="home_language">言語</string>
     <string name="mode_classic_detail">バランスの取れた基本リズム。</string>

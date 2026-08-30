@@ -269,7 +269,7 @@ private fun RankBadge(
 ) {
     val mode = profile.selectedMode
     if (!mode.isCompetitive) {
-        Text("ZEN · LOCAL", color = Color.White.copy(alpha = 0.48f), fontSize = 9.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.home_rank_zen), color = Color.White.copy(alpha = 0.48f), fontSize = 9.sp, fontWeight = FontWeight.SemiBold)
         return
     }
 

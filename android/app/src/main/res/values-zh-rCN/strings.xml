@@ -16,6 +16,7 @@
     <string name="home_rank_local">本地 #%1$d</string>
     <string name="home_rank_play_games">PLAY GAMES #%1$d</string>
     <string name="home_rank_offline">排行榜未连接</string>
+    <string name="home_rank_zen">ZEN · 本地</string>
     <string name="home_rank_connect">连接</string>
     <string name="home_language">语言</string>
     <string name="mode_classic_detail">原版平衡节奏。</string>

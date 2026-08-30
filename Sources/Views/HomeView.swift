@@ -253,7 +253,7 @@ struct HomeView: View {
     @ViewBuilder
     private var rankBadge: some View {
         if !profile.selectedMode.isCompetitive {
-            Text("ZEN · LOCAL")
+            Text(language.text("home.rank.zen"))
                 .font(.caption2.monospaced().weight(.semibold))
                 .foregroundStyle(.secondary)
         } else if let rank = gameCenter.remoteRank(for: profile.selectedMode) {

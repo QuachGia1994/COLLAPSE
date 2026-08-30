@@ -4,7 +4,6 @@ import java.time.LocalDate
 
 enum class GameMode(
     val title: String,
-    val subtitle: String,
     val choiceBase: Double,
     val choiceFloor: Double,
     val choiceDecay: Double,
@@ -17,23 +16,23 @@ enum class GameMode(
     val isCompetitive: Boolean
 ) {
     Classic(
-        "CLASSIC", "Nhịp cân bằng nguyên bản.",
+        "CLASSIC",
         1.45, 0.72, 0.045, 0.90, 0.62, 0.012, 1.0, null, true, true
     ),
     Rush(
-        "RUSH", "Quyết định nhanh, chuyển động nhanh.",
+        "RUSH",
         1.05, 0.52, 0.032, 0.68, 0.46, 0.010, 1.0, null, true, true
     ),
     Precision(
-        "PRECISION", "Chỉ một lần đổi nhánh mỗi round.",
+        "PRECISION",
         1.24, 0.58, 0.038, 0.82, 0.56, 0.010, 1.28, 1, true, true
     ),
     Daily(
-        "DAILY", "Một timeline cố định cho mỗi ngày.",
+        "DAILY",
         1.28, 0.62, 0.040, 0.84, 0.56, 0.011, 1.10, null, true, true
     ),
     Zen(
-        "ZEN", "Practice chậm, va chạm không kết thúc run.",
+        "ZEN",
         2.00, 1.20, 0.025, 1.08, 0.82, 0.006, 0.90, null, false, false
     );
 

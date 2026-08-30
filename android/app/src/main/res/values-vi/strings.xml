@@ -16,6 +16,7 @@
     <string name="home_rank_local">LOCAL #%1$d</string>
     <string name="home_rank_play_games">PLAY GAMES #%1$d</string>
     <string name="home_rank_offline">CHƯA KẾT NỐI BẢNG XẾP HẠNG</string>
+    <string name="home_rank_zen">ZEN · LOCAL</string>
     <string name="home_rank_connect">KẾT NỐI</string>
     <string name="home_language">NGÔN NGỮ</string>
     <string name="mode_classic_detail">Nhịp cân bằng nguyên bản.</string>
