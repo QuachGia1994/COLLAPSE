@@ -20,10 +20,14 @@
 - Xcode 27 CI preview lane with standard SwiftUI `ViewBuilder` composition for app-root and Plus purchase conditionals.
 - Daily Run streak, daily best, local top-three scores, cosmetic gem economy, free gem-unlocked skins, and Plus-only theme/pulse access with focused unit coverage.
 - Repeated cold-launch UI smoke test to catch startup crashes in CI before release builds.
-- Native Android Jetpack Compose test client preserving the visible-two-futures, one-tap core loop, plus GitHub Actions debug APK output for device testing.
+- Native Android Jetpack Compose production-parity client matching iOS Home, three-step tutorial, two-future gameplay, Pause/Resume, Game Over, branding, skins, gem economy, Plus presentation, haptic/audio feedback, and navigation semantics.
 - Unsigned beta artifacts in CI: `COLLAPSE-iOS-Unsigned-IPA` from an unsigned Release device build and `COLLAPSE-Android-Unsigned-APK` from the Android release variant, both gated below 25 MB; Android also keeps an installable debug APK.
+- Android parity unit tests for deterministic rounds, hazard/gem branch placement, safe scoring/gem collection, dangerous-future death, and pause/restart state.
 
 ### Changed
+- Android is no longer a reduced test client: iOS is now the shared visual/behavior source of truth for cross-platform screens and gameplay, while platform-only UI such as Dynamic Island remains iOS-only.
+- Android now uses the same skin access rules as iOS, persists profile/economy state with SharedPreferences, and provides a vector COLLAPSE launcher icon instead of a generic app icon.
+- Android Plus mirrors iOS benefits, locks, and fairness messaging without fabricating Google Play purchases before Billing integration.
 - iOS gameplay rendering now uses SwiftUI Canvas/Path primitives and native `.thinMaterial` / `.regularMaterial` glass surfaces; procedural audio remains synthesized at runtime and the app icon is the only required static visual asset.
 - CI now builds the app and Live Activity extension on the GitHub Actions Xcode 27 public-preview runner and uploads `COLLAPSE-iOS-Simulator-Xcode27`.
 

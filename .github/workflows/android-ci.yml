@@ -41,9 +41,9 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build debug and unsigned release APKs
+      - name: Test and build beta APKs
         working-directory: android
-        run: gradle :app:assembleDebug :app:assembleRelease --stacktrace
+        run: gradle :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease --stacktrace
 
       - name: Enforce Android unsigned beta size target
         run: |
