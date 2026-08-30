@@ -15,8 +15,10 @@ targets:
     sources:
       - Sources
       - Shared
-    resources:
-      - Resources
+      - path: Resources
+        buildPhase: resources
+        excludes:
+          - Collapse.entitlements
     dependencies:
       - target: CollapseWidgets
         embed: true

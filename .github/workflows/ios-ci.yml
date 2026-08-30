@@ -113,6 +113,16 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build
 
+      - name: Verify bundled localization and App Icon assets
+        run: |
+          app=".build-device/Build/Products/Release-iphoneos/Collapse.app"
+          test -f "$app/Assets.car" || { echo "Assets.car missing from app bundle"; exit 1; }
+          for locale in en vi ja zh-Hans; do
+            strings="$app/$locale.lproj/Localizable.strings"
+            test -f "$strings" || { echo "$locale localization missing from app bundle"; exit 1; }
+            /usr/bin/plutil -p "$strings" | grep -q '"home.play"' || { echo "$locale Localizable.strings missing home.play"; exit 1; }
+          done
+
       - name: Package unsigned IPA
         run: |
           rm -rf .artifacts
