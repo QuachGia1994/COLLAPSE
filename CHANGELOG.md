@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Audio settings on both platforms with full parity: music, sound-effect, and haptics toggles persisted per install and reachable from a Home audio menu; iOS now plays the same looping CC0 `duru-arcade-vibe` background track as Android with lifecycle pause/resume and lower volume in Power Save Mode.
 - Android foreground background music using the CC0 `duru-arcade-vibe` track from `uncle-sheepsky/duru-cc0-bgm`, with lifecycle pause/resume and lower volume in Power Save Mode.
 - Mode-scoped best/today/top-score persistence so CLASSIC/RUSH/PRECISION/DAILY records are no longer mixed together; streak and gem balance remain account-wide.
 - Game Center leaderboards on iOS and Play Games Services v2 leaderboards on Android, with per-mode IDs, remote rank display, offline score queue, and retry on reconnect; Zen stays local-only.
