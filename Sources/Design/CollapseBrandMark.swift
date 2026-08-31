@@ -64,14 +64,27 @@ struct CollapseLogoSymbol: View {
     }
 
     private func drawOrbitRing(context: inout GraphicsContext, center: CGPoint, ringRadius: CGFloat, minDimension: CGFloat) {
-        let ring = Path(ellipseIn: circle(at: center, radius: ringRadius))
-        let shading = GraphicsContext.Shading.angularGradient(
-            Gradient(colors: [CollapseIconPalette.ringMagenta, CollapseIconPalette.ringCyan, CollapseIconPalette.ringMagenta]),
-            center: center,
-            startAngle: .degrees(0),
-            endAngle: .degrees(360)
+        // Interpolated cyan->magenta sweep (east magenta, west cyan) drawn as
+        // short arc segments; GraphicsContext.Shading has no angular shading.
+        let segments = 72
+        let style = StrokeStyle(lineWidth: max(1, minDimension * 0.012), lineCap: .round)
+        for index in 0..<segments {
+            let startAngle = Double(index) / Double(segments) * 2 * .pi
+            let endAngle = Double(index + 1) / Double(segments) * 2 * .pi
+            var arc = Path()
+            arc.addArc(center: center, radius: ringRadius, startAngle: .radians(startAngle), endAngle: .radians(endAngle), clockwise: false)
+            context.stroke(arc, with: .color(ringColor(at: startAngle)), style: style)
+        }
+    }
+
+    private func ringColor(at angle: Double) -> Color {
+        let t = CGFloat((cos(angle) + 1) / 2) // 1 = east (magenta), 0 = west (cyan)
+        func lerp(_ from: CGFloat, _ to: CGFloat) -> CGFloat { from + (to - from) * t }
+        return Color(
+            red: lerp(0x70 / 255, 0xF7 / 255),
+            green: lerp(0xEE / 255, 0x73 / 255),
+            blue: lerp(0xFF / 255, 0xFF / 255)
         )
-        context.stroke(ring, with: shading, style: StrokeStyle(lineWidth: max(1, minDimension * 0.012), lineCap: .round))
     }
 
     private func drawTimelines(context: inout GraphicsContext, center: CGPoint, ringRadius: CGFloat, minDimension: CGFloat) {
