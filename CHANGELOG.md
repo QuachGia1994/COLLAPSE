@@ -36,6 +36,7 @@
 - Procedural centered startup branding on iOS and Android without adding new external image assets.
 
 ### Changed
+- Every in-app logo surface on iOS and Android (brand marks, startup, Plus orb) now draws the exact AppIcon composition — gradient orbit ring, planet sphere, dashed timelines, cyan/magenta nodes, and purple shards — with fully proportional geometry, replacing the old ring/curve/green-red-node mark; brand text no longer overflows on compact iPhones.
 - Android now mirrors the iOS visual system (iOS remains the source of truth) across Home, Game, Pause, Game Over, Tutorial, Plus, Skin, and Startup: glass hierarchy and border alphas, card radii and max widths, header circular glass buttons, Home orb capsules, tutorial board aspect/dash/hazard geometry, step and selection animation timing (220/240 ms), Plus orb ring and plan cards, skin preview capsules and card previews, startup logo circle, overlay shade, and canvas render values (portal glow, decision ring, feedback rings, hazard spikes).
 - Android is no longer a reduced test client: iOS is now the shared visual/behavior source of truth for cross-platform screens and gameplay, while platform-only UI such as Dynamic Island remains iOS-only.
 - Android now uses the same skin access rules as iOS, persists profile/economy state with SharedPreferences, and provides a vector COLLAPSE launcher icon instead of a generic app icon.
