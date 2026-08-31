@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +72,8 @@ fun CollapseBrandMark(
                 color = Color.White,
                 fontSize = if (compact) 18.sp else 30.sp,
                 fontWeight = if (compact) FontWeight.Medium else FontWeight.Light,
-                letterSpacing = if (compact) 3.sp else 6.sp
+                letterSpacing = if (compact) 3.sp else 6.sp,
+                maxLines = 1
             )
             if (subtitle.isNotEmpty()) {
                 Text(
@@ -79,45 +81,96 @@ fun CollapseBrandMark(
                     color = Color.White.copy(alpha = 0.48f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium,
-                    letterSpacing = if (compact) 1.5.sp else 2.5.sp
+                    letterSpacing = if (compact) 1.5.sp else 2.5.sp,
+                    maxLines = 1
                 )
             }
         }
     }
 }
 
+// Canonical COLLAPSE icon palette sampled from the AppIcon artwork; every
+// in-app logo surface draws the same composition as the app-screen icon.
+private val IconRingCyan = Color(0xFF70EEFF)
+private val IconRingMagenta = Color(0xFFF773FF)
+private val IconDashCyan = Color(0xFF28DAFF)
+private val IconDashMagenta = Color(0xFFD450FF)
+private val IconPlanetLight = Color(0xFF9AB2CE)
+private val IconPlanetMid = Color(0xFF86A0E7)
+private val IconPlanetDeep = Color(0xFF3A468E)
+private val IconPlanetGlow = Color(0xFF963CBD)
+private val IconShard = Color(0xFF965FFF)
+
 @Composable
 fun CollapseLogoSymbol(tint: Color, modifier: Modifier = Modifier) {
     Canvas(modifier) {
-        val inset = size.minDimension * 0.08f
+        val minDimension = minOf(size.width, size.height)
         val center = Offset(size.width / 2f, size.height / 2f)
-        val radius = (size.minDimension - inset * 2f) / 2f
-        drawCircle(tint.copy(alpha = 0.72f), radius, center, style = Stroke(width = 1.6.dp.toPx()))
-        drawFutureCurve(tint, upper = true)
-        drawFutureCurve(Color(0xFFB44CFF), upper = false)
-        drawLogoNodes(tint)
+        val ringRadius = minDimension * 0.375f
+        val planetRadius = ringRadius * 0.61f
+
+        val glowCenter = Offset(center.x, center.y - minDimension * 0.05f)
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(IconPlanetGlow.copy(alpha = 0.55f), IconPlanetGlow.copy(alpha = 0f)),
+                center = glowCenter,
+                radius = ringRadius * 1.05f
+            ),
+            radius = ringRadius * 1.05f,
+            center = glowCenter
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(IconPlanetLight, IconPlanetMid, IconPlanetDeep),
+                center = Offset(center.x - planetRadius * 0.35f, center.y - planetRadius * 0.45f),
+                radius = planetRadius * 1.55f
+            ),
+            radius = planetRadius,
+            center = center
+        )
+        drawCircle(
+            brush = Brush.sweepGradient(listOf(IconRingMagenta, IconRingCyan, IconRingMagenta), center),
+            radius = ringRadius,
+            center = center,
+            style = Stroke(width = (minDimension * 0.012f).coerceAtLeast(1.dp.toPx()), cap = StrokeCap.Round)
+        )
+
+        val start = Offset(center.x - ringRadius, center.y + minDimension * 0.027f)
+        val end = Offset(center.x + ringRadius, center.y - minDimension * 0.024f)
+        val dash = PathEffect.dashPathEffect(floatArrayOf(minDimension * 0.021f, minDimension * 0.013f))
+        val upper = Path().apply {
+            moveTo(start.x, start.y)
+            quadraticBezierTo(center.x, center.y - minDimension * 0.18f, end.x, end.y)
+        }
+        drawPath(upper, IconDashCyan, style = Stroke(minDimension * 0.014f, cap = StrokeCap.Round, pathEffect = dash))
+        val lower = Path().apply {
+            moveTo(start.x, start.y)
+            quadraticBezierTo(center.x, center.y + minDimension * 0.18f, end.x, end.y)
+        }
+        drawPath(lower, IconDashMagenta, style = Stroke(minDimension * 0.014f, cap = StrokeCap.Round, pathEffect = dash))
+
+        val nodeRadius = minDimension * 0.023f
+        drawCircle(IconRingCyan, nodeRadius, start)
+        drawCircle(IconRingMagenta, nodeRadius, end)
+
+        val triangleWidth = minDimension * 0.021f
+        val triangleHeight = minDimension * 0.019f
+        val spacingX = minDimension * 0.044f
+        val rows = listOf(0.195f to 0.700f, 0.275f to 0.712f, 0.355f to 0.690f)
+        for ((rowY, rowX) in rows) {
+            for (column in 0..4) {
+                val originX = minDimension * rowX + column * spacingX
+                val originY = minDimension * rowY
+                val triangle = Path().apply {
+                    moveTo(originX, originY)
+                    lineTo(originX + triangleWidth, originY + triangleHeight / 2f)
+                    lineTo(originX, originY + triangleHeight)
+                    close()
+                }
+                drawPath(triangle, IconShard, style = Stroke((minDimension * 0.003f).coerceAtLeast(0.8f)))
+            }
+        }
     }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFutureCurve(color: Color, upper: Boolean) {
-    val path = Path()
-    val startY = if (upper) 0.62f else 0.42f
-    val endY = if (upper) 0.38f else 0.66f
-    val controlY = if (upper) 0.22f else 0.78f
-    path.moveTo(size.width * 0.20f, size.height * startY)
-    path.quadraticBezierTo(size.width * 0.50f, size.height * controlY, size.width * 0.80f, size.height * endY)
-    drawPath(path, color, style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round))
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLogoNodes(tint: Color) {
-    drawCircle(tint, 4.5.dp.toPx(), Offset(size.width * 0.18f, size.height * 0.53f))
-    drawCircle(Color(0xFF4DFF8D), 4.5.dp.toPx(), Offset(size.width * 0.82f, size.height * 0.38f))
-    drawCircle(
-        Color(0xFFFF4C57),
-        6.dp.toPx(),
-        Offset(size.width * 0.75f, size.height * 0.67f),
-        style = Stroke(width = 2.dp.toPx())
-    )
 }
 
 @Composable
